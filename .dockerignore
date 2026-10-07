@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/.next
+**/out
+.git
+.github
+*.log
+**/*.tsbuildinfo
+.env
+.env.*
+!.env.example
+scratchpad

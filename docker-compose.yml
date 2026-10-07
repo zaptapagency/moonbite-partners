@@ -1,7 +1,10 @@
-# Local infra for MoonBite Partners. `docker compose up -d`.
-# Postgres + Redis start immediately. The MBITE node is a placeholder:
-# replace `image` with the official MoonBite node image (or build from source)
-# once the codebase lineage is confirmed (see PLAN.md §7 / Phase 0).
+# MoonBite Partners.
+#   docker compose up -d                       → infra only (Postgres + Redis)
+#   docker compose --profile app up -d --build → full stack (infra + api + web)
+#
+# Infra starts by default; the api/web services are behind the "app" profile so
+# `npm run infra:up` stays infra-only. The MBITE node is a placeholder — the
+# stack runs without it (payments stay AWAITING, /health reports node down).
 
 services:
   postgres:
@@ -28,6 +31,45 @@ services:
       - "6379:6379"
     volumes:
       - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      API_PORT: 4000
+      DATABASE_URL: postgresql://moonbite:moonbite@postgres:5432/moonbite?schema=public
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: http://localhost:3000
+      JWT_SECRET: dev-compose-secret-change-me
+      # MBITE_RPC_URL / MBITE_ZMQ_* left unset — node is optional for the demo.
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:4000
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
 
   # ── MBITE full node (PLACEHOLDER) ────────────────────────────
   # The payment service talks to this over JSON-RPC + ZMQ.

@@ -32,7 +32,21 @@ Non-custodial settlement, zero chargebacks, automated delivery on payment confir
 - A **MoonBite full node** reachable over JSON-RPC (see `docker-compose.yml` and PLAN.md Phase 0).
   The app runs without one, but payments stay in `AWAITING_PAYMENT` until a node is connected.
 
-## Quick start
+## Run the whole stack with Docker (one command)
+
+```bash
+npm run stack:up      # builds images, starts Postgres + Redis + api + web
+# API  → http://localhost:4000/health
+# Web  → http://localhost:3000
+npm run stack:down    # stop everything
+```
+
+The API container applies the DB schema on boot (`prisma db push`). No MBITE node is
+required — the stack runs without one (payments stay `AWAITING_PAYMENT`; `/health` reports
+the node as unreachable but still returns `200`). This is exactly what CI builds and
+smoke-tests (see [.github/workflows/ci.yml](.github/workflows/ci.yml)).
+
+## Local dev (hot reload)
 
 ```bash
 # 1. install workspaces
@@ -41,7 +55,7 @@ npm install
 # 2. copy env and fill it in
 cp .env.example .env            # Windows: copy .env.example .env
 
-# 3. start Postgres + Redis
+# 3. start Postgres + Redis only
 npm run infra:up
 
 # 4. create the DB schema + Prisma client, then seed demo data

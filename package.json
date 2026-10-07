@@ -19,6 +19,8 @@
     "lint": "npm run lint --workspaces --if-present",
     "infra:up": "docker compose up -d",
     "infra:down": "docker compose down",
+    "stack:up": "docker compose --profile app up -d --build",
+    "stack:down": "docker compose --profile app down",
     "db:generate": "npm run db:generate --workspace @moonbite/api",
     "db:migrate": "npm run db:migrate --workspace @moonbite/api"
   },

@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Fast feedback: typecheck, unit tests, and production builds of both apps.
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build shared package
+        run: npm run build -w @moonbite/shared
+      - name: Generate Prisma client
+        run: npx prisma generate --schema apps/api/prisma/schema.prisma
+      - name: Typecheck API
+        run: npx tsc -p apps/api/tsconfig.json --noEmit
+      - name: Typecheck web
+        run: npx tsc -p apps/web/tsconfig.json --noEmit
+      - name: Unit tests
+        run: npm test -w @moonbite/api
+      - name: Build API
+        run: npm run build -w @moonbite/api
+      - name: Build web
+        run: npm run build -w @moonbite/web
+
+  # Proof the whole stack boots and serves: build the images, bring up the full
+  # compose stack, and hit the running API + web.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start full stack
+        run: docker compose --profile app up -d --build
+
+      - name: Wait for API /health
+        run: |
+          for i in $(seq 1 60); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:4000/health || true)
+            if [ "$code" = "200" ]; then echo "API healthy"; exit 0; fi
+            echo "waiting for API ($i)… got '$code'"; sleep 3
+          done
+          echo "API did not become healthy"; exit 1
+
+      - name: Health reports status ok
+        run: |
+          curl -s http://localhost:4000/health | tee /tmp/health.json
+          grep -q '"status":"ok"' /tmp/health.json
+
+      - name: Wait for web
+        run: |
+          for i in $(seq 1 30); do
+            code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+            if [ "$code" = "200" ]; then echo "web up"; exit 0; fi
+            echo "waiting for web ($i)… got '$code'"; sleep 3
+          done
+          echo "web did not come up"; exit 1
+
+      - name: Auth round-trip (register → login)
+        run: |
+          EMAIL="ci-$(date +%s)@example.com"
+          reg=$(curl -s -X POST http://localhost:4000/auth/register \
+            -H 'content-type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"password123\",\"displayName\":\"CI\"}")
+          echo "$reg" | grep -q 'accessToken' || { echo "register failed: $reg"; exit 1; }
+          login=$(curl -s -X POST http://localhost:4000/auth/login \
+            -H 'content-type: application/json' \
+            -d "{\"email\":\"$EMAIL\",\"password\":\"password123\"}")
+          echo "$login" | grep -q 'accessToken' || { echo "login failed: $login"; exit 1; }
+          echo "auth round-trip ok"
+
+      - name: Dump logs on failure
+        if: failure()
+        run: docker compose --profile app logs --no-color
+
+      - name: Tear down
+        if: always()
+        run: docker compose --profile app down -v
