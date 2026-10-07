@@ -36,3 +36,6 @@ apps/api/prisma/*.db
 wallet.dat
 *.xprv
 *.seed
+
+# Agent worktrees (managed by the harness)
+.claude/worktrees/
