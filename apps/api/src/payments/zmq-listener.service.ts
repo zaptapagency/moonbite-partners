@@ -4,17 +4,18 @@ import * as zmq from "zeromq";
 import * as bitcoin from "bitcoinjs-lib";
 import { MBITE_NETWORK } from "../mbite/mbite.network";
 import { PaymentsService } from "./payments.service";
+import { ReconcileProducer } from "../queue/reconcile.producer";
 
 /**
  * Primary payment trigger (PLAN.md §3): subscribes to the MoonBite node's ZMQ
- * publishers and reconciles affected orders the moment a tx/block appears,
- * instead of waiting for the next poll.
+ * publishers and ENQUEUES reconciliation the moment a tx/block appears, instead
+ * of waiting for the next poll. The BullMQ worker does the actual chain checks.
  *
  *   rawtx   → a transaction entered the mempool/was relayed. We decode its
- *             outputs, match them to open orders, and reconcile those (0-conf
+ *             outputs, match them to open orders, and enqueue those (0-conf
  *             DETECTED).
  *   rawblock→ a new block was found. Confirmations advanced for everything in
- *             flight, so we reconcile all open orders (DETECTED → PAID).
+ *             flight, so we enqueue all open orders (DETECTED → PAID).
  *
  * The node must be started with:
  *   -zmqpubrawtx=tcp://0.0.0.0:28332 -zmqpubrawblock=tcp://0.0.0.0:28333
@@ -32,6 +33,7 @@ export class ZmqListenerService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly payments: PaymentsService,
+    private readonly queue: ReconcileProducer,
     config: ConfigService,
   ) {
     this.rawTxEndpoint = config.get<string>("MBITE_ZMQ_RAWTX") || undefined;
@@ -91,13 +93,13 @@ export class ZmqListenerService implements OnModuleInit, OnModuleDestroy {
     const addresses = this.decodeOutputAddresses(raw);
     if (addresses.length === 0) return;
     const ids = await this.payments.findOpenByAddresses(addresses);
-    for (const id of ids) await this.reconcileSafe(id);
+    for (const id of ids) await this.queue.enqueueOrder(id);
     if (ids.length) this.log.log(`rawtx matched ${ids.length} open order(s)`);
   }
 
   private async handleRawBlock(): Promise<void> {
     const open = await this.payments.openOrders();
-    for (const { id } of open) await this.reconcileSafe(id);
+    for (const { id } of open) await this.queue.enqueueOrder(id);
   }
 
   /** Decode a raw tx and return the pay-to addresses of its outputs. */
@@ -117,13 +119,5 @@ export class ZmqListenerService implements OnModuleInit, OnModuleDestroy {
       }
     }
     return addresses;
-  }
-
-  private async reconcileSafe(orderId: string): Promise<void> {
-    try {
-      await this.payments.reconcile(orderId);
-    } catch (e) {
-      this.log.warn(`Reconcile ${orderId} failed: ${String(e)}`);
-    }
   }
 }

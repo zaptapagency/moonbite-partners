@@ -79,9 +79,13 @@ running multiple API instances.
    merchant's **xpub** ([hd-address.service.ts](apps/api/src/mbite/hd-address.service.ts))
    and locks the amount + quote window.
 2. [zmq-listener.service.ts](apps/api/src/payments/zmq-listener.service.ts) subscribes to
-   the node's **ZMQ** `rawtx`/`rawblock` publishers and reconciles affected orders the
-   instant they appear; `ConfirmationService` is a slow backstop poll for missed events.
-3. `PaymentsService.reconcile` scans the address via
+   the node's **ZMQ** `rawtx`/`rawblock` publishers and **enqueues** affected orders the
+   instant they appear; `ConfirmationService` is a slow backstop sweep for missed events.
+   Both only enqueue — a **BullMQ** worker
+   ([reconcile.processor.ts](apps/api/src/queue/reconcile.processor.ts), backed by Redis)
+   does the actual chain checks with retries + exponential backoff, so a flaky node never
+   blocks the producers.
+3. `PaymentsService.reconcile` (run by the worker) scans the address via
    [mbite-rpc.client.ts](apps/api/src/mbite/mbite-rpc.client.ts), counts confirmations,
    and moves the order `DETECTED → PAID` (state machine in
    [packages/shared/src/order-status.ts](packages/shared/src/order-status.ts)).
