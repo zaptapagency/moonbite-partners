@@ -1,10 +1,11 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
 import { DeliveryMethod } from "@prisma/client";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentMerchant, AuthMerchant } from "../auth/current-merchant.decorator";
 import { ProductsService } from "./products.service";
 
 class CreateProductDto {
-  @IsString() merchantId!: string;
   @IsString() @MinLength(2) title!: string;
   @IsOptional() @IsString() description?: string;
   /** Price in smallest MBITE unit. */
@@ -27,10 +28,12 @@ export class ProductsController {
     return this.products.get(id);
   }
 
+  /** Create a product for the authenticated merchant (merchantId comes from the token). */
+  @UseGuards(JwtAuthGuard)
   @Post()
-  create(@Body() dto: CreateProductDto) {
+  create(@CurrentMerchant() me: AuthMerchant, @Body() dto: CreateProductDto) {
     return this.products.create({
-      merchantId: dto.merchantId,
+      merchantId: me.id,
       title: dto.title,
       description: dto.description,
       priceMbite: BigInt(dto.priceMbiteUnits),

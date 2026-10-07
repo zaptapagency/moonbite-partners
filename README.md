@@ -57,6 +57,16 @@ Open http://localhost:3000, click a product → **Pay with MBITE**. You'll get a
 address and a live-updating checkout. Once a MBITE node is wired up and the payment
 confirms, the order auto-advances to `FULFILLED` and the license key is issued.
 
+### Merchant dashboard
+
+http://localhost:3000/dashboard — sign in with the seeded account
+(`demo@moonbite.example` / `password123`) or register a new one. From there a merchant can
+set their settlement xpub, create products, watch orders, and process refunds (record the
+refund txid for on-chain verification). Auth is JWT (`Authorization: Bearer <token>`,
+`POST /auth/register` · `/auth/login`); merchant-scoped endpoints live under
+[merchants.controller.ts](apps/api/src/merchants/merchants.controller.ts) and are guarded by
+[jwt-auth.guard.ts](apps/api/src/auth/jwt-auth.guard.ts).
+
 ## The payment flow (code map)
 
 1. `POST /orders` → `PaymentsService.createInvoice` derives a fresh address from the

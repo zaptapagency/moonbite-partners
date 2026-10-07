@@ -1,5 +1,7 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
 import { IsOptional, IsString, MinLength } from "class-validator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentMerchant, AuthMerchant } from "../auth/current-merchant.decorator";
 import { RefundsService } from "./refunds.service";
 
 class RequestRefundDto {
@@ -16,27 +18,36 @@ class RejectRefundDto {
   @IsOptional() @IsString() reason?: string;
 }
 
-/**
- * NOTE: these endpoints are unauthenticated in the scaffold. In production,
- * `request` is buyer- or merchant-initiated and `submit`/`reject` must be
- * guarded so only the owning merchant can act (PLAN.md §8).
- */
 @Controller()
 export class RefundsController {
   constructor(private readonly refunds: RefundsService) {}
 
+  /** Buyer- or merchant-initiated; left open so a buyer can request without an account. */
   @Post("orders/:orderId/refunds")
   requestRefund(@Param("orderId") orderId: string, @Body() dto: RequestRefundDto) {
     return this.refunds.request(orderId, dto);
   }
 
+  /** Merchant records the refund tx they broadcast — owner only. */
+  @UseGuards(JwtAuthGuard)
   @Post("refunds/:id/submit")
-  submit(@Param("id") id: string, @Body() dto: SubmitRefundDto) {
+  async submit(
+    @CurrentMerchant() me: AuthMerchant,
+    @Param("id") id: string,
+    @Body() dto: SubmitRefundDto,
+  ) {
+    await this.refunds.assertOwner(id, me.id);
     return this.refunds.submit(id, dto.txid);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post("refunds/:id/reject")
-  reject(@Param("id") id: string, @Body() dto: RejectRefundDto) {
+  async reject(
+    @CurrentMerchant() me: AuthMerchant,
+    @Param("id") id: string,
+    @Body() dto: RejectRefundDto,
+  ) {
+    await this.refunds.assertOwner(id, me.id);
     return this.refunds.reject(id, dto.reason);
   }
 

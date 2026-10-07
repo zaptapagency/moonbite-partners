@@ -21,9 +21,16 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             padding: "16px 24px",
             borderBottom: "1px solid #1c2230",
             fontWeight: 700,
+            display: "flex",
+            justifyContent: "space-between",
           }}
         >
-          🌙 MoonBite Partners
+          <a href="/" style={{ color: "inherit", textDecoration: "none" }}>
+            🌙 MoonBite Partners
+          </a>
+          <a href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none", fontWeight: 500 }}>
+            Merchant dashboard →
+          </a>
         </header>
         <main style={{ maxWidth: 960, margin: "0 auto", padding: 24 }}>
           {children}

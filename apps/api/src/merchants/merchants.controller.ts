@@ -1,27 +1,41 @@
-import { Body, Controller, Param, Post, Put } from "@nestjs/common";
-import { IsEmail, IsString, MinLength } from "class-validator";
+import { Body, Controller, Get, Put, UseGuards } from "@nestjs/common";
+import { IsString, MinLength } from "class-validator";
+import { JwtAuthGuard } from "../auth/jwt-auth.guard";
+import { CurrentMerchant, AuthMerchant } from "../auth/current-merchant.decorator";
 import { MerchantsService } from "./merchants.service";
-
-class CreateMerchantDto {
-  @IsEmail() email!: string;
-  @IsString() @MinLength(2) displayName!: string;
-}
 
 class SetXpubDto {
   @IsString() @MinLength(20) xpub!: string;
 }
 
-@Controller("merchants")
+/** All merchant-self (dashboard) endpoints. Authenticated; scoped to the token. */
+@UseGuards(JwtAuthGuard)
+@Controller("merchants/me")
 export class MerchantsController {
   constructor(private readonly merchants: MerchantsService) {}
 
-  @Post()
-  create(@Body() dto: CreateMerchantDto) {
-    return this.merchants.create(dto);
+  @Get()
+  profile(@CurrentMerchant() me: AuthMerchant) {
+    return this.merchants.profile(me.id);
   }
 
-  @Put(":id/xpub")
-  setXpub(@Param("id") id: string, @Body() dto: SetXpubDto) {
-    return this.merchants.setXpub(id, dto.xpub);
+  @Put("xpub")
+  setXpub(@CurrentMerchant() me: AuthMerchant, @Body() dto: SetXpubDto) {
+    return this.merchants.setXpub(me.id, dto.xpub);
+  }
+
+  @Get("products")
+  products(@CurrentMerchant() me: AuthMerchant) {
+    return this.merchants.myProducts(me.id);
+  }
+
+  @Get("orders")
+  orders(@CurrentMerchant() me: AuthMerchant) {
+    return this.merchants.myOrders(me.id);
+  }
+
+  @Get("refunds")
+  refunds(@CurrentMerchant() me: AuthMerchant) {
+    return this.merchants.myRefunds(me.id);
   }
 }

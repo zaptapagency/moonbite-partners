@@ -41,6 +41,8 @@ model Merchant {
   id            String       @id @default(cuid())
   email         String       @unique
   displayName   String
+  /// bcrypt hash; null for seeded/demo merchants that have not set a password.
+  passwordHash  String?
   tier          MerchantTier @default(STARTER)
   /// BIP32 xpub used to derive a fresh pay-to address per order.
   settlementXpub String?

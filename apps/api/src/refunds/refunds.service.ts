@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Injectable,
   Logger,
   NotFoundException,
@@ -172,6 +173,18 @@ export class RefundsService {
 
   get(refundId: string) {
     return this.prisma.refund.findUnique({ where: { id: refundId } });
+  }
+
+  /** Throw unless the refund's order belongs to `merchantId`. */
+  async assertOwner(refundId: string, merchantId: string): Promise<void> {
+    const refund = await this.prisma.refund.findUnique({
+      where: { id: refundId },
+      include: { order: { select: { merchantId: true } } },
+    });
+    if (!refund) throw new NotFoundException("Refund not found");
+    if (refund.order.merchantId !== merchantId) {
+      throw new ForbiddenException("Not your refund");
+    }
   }
 
   /** SUBMITTED refunds awaiting on-chain confirmation — polled as a backstop. */
