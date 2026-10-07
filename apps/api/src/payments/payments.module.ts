@@ -4,10 +4,11 @@ import { MerchantsModule } from "../merchants/merchants.module";
 import { PaymentsService } from "./payments.service";
 import { DeliveryService } from "./delivery.service";
 import { ConfirmationService } from "./confirmation.service";
+import { ZmqListenerService } from "./zmq-listener.service";
 
 @Module({
   imports: [MbiteModule, MerchantsModule],
-  providers: [PaymentsService, DeliveryService, ConfirmationService],
+  providers: [PaymentsService, DeliveryService, ConfirmationService, ZmqListenerService],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

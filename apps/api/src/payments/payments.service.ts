@@ -155,4 +155,20 @@ export class PaymentsService {
       select: { id: true },
     });
   }
+
+  /**
+   * Open orders whose pay-to address appears in `addresses`. Used by the ZMQ
+   * listener to reconcile only the orders a just-seen transaction touches.
+   */
+  async findOpenByAddresses(addresses: string[]): Promise<string[]> {
+    if (addresses.length === 0) return [];
+    const rows = await this.prisma.order.findMany({
+      where: {
+        payToAddress: { in: addresses },
+        status: { in: ["AWAITING_PAYMENT", "DETECTED", "OVERPAID"] },
+      },
+      select: { id: true },
+    });
+    return rows.map((r) => r.id);
+  }
 }

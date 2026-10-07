@@ -62,7 +62,9 @@ confirms, the order auto-advances to `FULFILLED` and the license key is issued.
 1. `POST /orders` → `PaymentsService.createInvoice` derives a fresh address from the
    merchant's **xpub** ([hd-address.service.ts](apps/api/src/mbite/hd-address.service.ts))
    and locks the amount + quote window.
-2. `ConfirmationService` polls open orders (production: swap to node **ZMQ** push).
+2. [zmq-listener.service.ts](apps/api/src/payments/zmq-listener.service.ts) subscribes to
+   the node's **ZMQ** `rawtx`/`rawblock` publishers and reconciles affected orders the
+   instant they appear; `ConfirmationService` is a slow backstop poll for missed events.
 3. `PaymentsService.reconcile` scans the address via
    [mbite-rpc.client.ts](apps/api/src/mbite/mbite-rpc.client.ts), counts confirmations,
    and moves the order `DETECTED → PAID` (state machine in

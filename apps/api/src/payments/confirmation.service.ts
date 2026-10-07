@@ -1,31 +1,34 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { PaymentsService } from "./payments.service";
 
 /**
- * Drives reconciliation of open invoices.
+ * BACKSTOP reconciler. The PRIMARY trigger is now ZmqListenerService, which
+ * reconciles orders the instant the node pushes a rawtx/rawblock event. This
+ * slow poll only catches events that ZMQ missed (listener down, node ZMQ off,
+ * dropped frame) and expires stale quotes. Interval is deliberately long;
+ * override with CONFIRMATION_POLL_MS.
  *
- * This scaffold uses a simple polling loop as a dependable fallback. In
- * production the PRIMARY trigger should be the node's ZMQ `rawtx`/`rawblock`
- * push notifications (PLAN.md §3): subscribe, and on each event reconcile the
- * affected / all-open orders. Polling then only backstops missed events.
- *
- * TODO(Phase 1): add a ZMQ subscriber (e.g. `zeromq` pkg) that calls
- * paymentsService.reconcile(orderId) on relevant tx, and move this poll to a
- * long interval. Also move reconciliation onto a BullMQ queue so it scales
- * horizontally and retries cleanly.
+ * TODO(scale): move reconciliation onto a BullMQ queue so it runs on workers
+ * and retries cleanly, rather than inline in this loop.
  */
 @Injectable()
 export class ConfirmationService implements OnModuleInit, OnModuleDestroy {
   private readonly log = new Logger(ConfirmationService.name);
   private timer?: NodeJS.Timeout;
   private running = false;
-  private static readonly POLL_MS = 15_000;
+  private readonly pollMs: number;
 
-  constructor(private readonly payments: PaymentsService) {}
+  constructor(
+    private readonly payments: PaymentsService,
+    config: ConfigService,
+  ) {
+    this.pollMs = Number(config.get("CONFIRMATION_POLL_MS") ?? 60_000);
+  }
 
   onModuleInit() {
-    this.timer = setInterval(() => void this.tick(), ConfirmationService.POLL_MS);
-    this.log.log(`Confirmation poller started (every ${ConfirmationService.POLL_MS}ms)`);
+    this.timer = setInterval(() => void this.tick(), this.pollMs);
+    this.log.log(`Confirmation backstop poller started (every ${this.pollMs}ms)`);
   }
 
   onModuleDestroy() {
