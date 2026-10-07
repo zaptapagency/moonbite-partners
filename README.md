@@ -46,6 +46,23 @@ required — the stack runs without one (payments stay `AWAITING_PAYMENT`; `/hea
 the node as unreachable but still returns `200`). This is exactly what CI builds and
 smoke-tests (see [.github/workflows/ci.yml](.github/workflows/ci.yml)).
 
+### Published images (GHCR)
+
+On every push to the default branch, after `verify` + `e2e` pass, CI pushes:
+
+- `ghcr.io/<owner>/<repo>-api`
+- `ghcr.io/<owner>/<repo>-web`
+
+tagged `latest`, the branch name, and `sha-<commit>`. Pull and run the published API, e.g.:
+
+```bash
+docker pull ghcr.io/<owner>/<repo>-api:latest
+```
+
+The web image bakes `NEXT_PUBLIC_API_BASE_URL` at build time (the browser's API URL).
+To target a non-local API, set a repo variable `NEXT_PUBLIC_API_BASE_URL` (CI reads it) or
+rebuild with `--build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com`.
+
 ## Local dev (hot reload)
 
 ```bash
