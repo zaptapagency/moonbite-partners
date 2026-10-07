@@ -201,11 +201,53 @@ jobs:
             export API_IMAGE WEB_IMAGE JWT_SECRET POSTGRES_PASSWORD CORS_ORIGINS
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d
-            docker image prune -f
             docker logout ghcr.io
+
+            # --- smoke test: the rollout only counts if it actually serves ---
+            echo "Smoke test: waiting for API /health…"
+            ok=0
+            for i in $(seq 1 40); do
+              code=$(curl -s -o /tmp/mb_health -w "%{http_code}" http://localhost:4000/health || true)
+              if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/mb_health; then
+                echo "API healthy"; ok=1; break
+              fi
+              echo "…waiting ($i) got '$code'"; sleep 3
+            done
+            if [ "$ok" != "1" ]; then
+              echo "API failed smoke test — recent logs:"
+              docker compose -f docker-compose.prod.yml logs --tail=120 api
+              exit 1
+            fi
+
+            echo "Smoke test: web root…"
+            webcode=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+            if [ "$webcode" != "200" ]; then
+              echo "Web failed smoke test (got '$webcode') — recent logs:"
+              docker compose -f docker-compose.prod.yml logs --tail=120 web
+              exit 1
+            fi
+
+            echo "Smoke test passed."
+            docker image prune -f
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+
+      # Verify the deployment is reachable from OUTSIDE the host too (DNS, proxy,
+      # firewall, TLS). Runs only if a public health URL is configured.
+      - name: External smoke test
+        if: steps.gate.outputs.enabled == 'true' && vars.DEPLOY_HEALTH_URL != ''
+        run: |
+          URL="${{ vars.DEPLOY_HEALTH_URL }}"
+          echo "Probing $URL"
+          for i in $(seq 1 20); do
+            code=$(curl -s -o /tmp/h -w "%{http_code}" "$URL" || true)
+            if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/h; then
+              echo "External health ok"; exit 0
+            fi
+            echo "…waiting ($i) got '$code'"; sleep 3
+          done
+          echo "External health check failed for $URL"; cat /tmp/h || true; exit 1

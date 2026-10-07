@@ -83,6 +83,12 @@ The job logs the server into GHCR using the ephemeral `GITHUB_TOKEN` (valid for 
 pulls the `sha-<commit>` tags, and `docker compose up -d`. Deploy to a managed DB instead
 by pointing `DATABASE_URL`/`REDIS_URL` at external services in the prod compose.
 
+**Smoke test.** After `up -d`, the rollout polls `/health` (must return `200` + `status:ok`)
+and the web root on the host — if either fails it prints the container logs and **fails the
+deploy** (the host needs `curl`). Set a repo variable `DEPLOY_HEALTH_URL` (e.g.
+`https://api.example.com/health`) to also verify the deployment is reachable from outside
+the host (DNS/proxy/TLS) from the runner.
+
 ## Local dev (hot reload)
 
 ```bash
