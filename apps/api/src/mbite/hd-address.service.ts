@@ -35,4 +35,14 @@ export class HdAddressService {
       return false;
     }
   }
+
+  /** Validate that a string is a well-formed MBITE address (any standard type). */
+  isValidAddress(address: string): boolean {
+    try {
+      bitcoin.address.toOutputScript(address, MBITE_NETWORK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
 }

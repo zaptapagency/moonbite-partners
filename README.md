@@ -71,6 +71,21 @@ confirms, the order auto-advances to `FULFILLED` and the license key is issued.
    [packages/shared/src/order-status.ts](packages/shared/src/order-status.ts)).
 4. On `PAID`, `DeliveryService.fulfill` issues the entitlement → `FULFILLED`.
 
+### Refunds (non-custodial)
+
+The platform holds only watch-only xpubs, so it cannot send funds. Refunds are a
+request → merchant-sends → platform-verifies flow (see
+[refunds.service.ts](apps/api/src/refunds/refunds.service.ts)):
+
+1. `POST /orders/:id/refunds` → opens a `REQUESTED` refund to the buyer's return address.
+2. The merchant sends MBITE back from their own wallet, then
+   `POST /refunds/:id/submit` with the `txid` (→ `SUBMITTED`).
+3. `RefundsService.verify` checks the tx on-chain
+   ([refund-verification.ts](apps/api/src/refunds/refund-verification.ts)); once it pays
+   the return address in full with enough confirmations → `CONFIRMED`, the order flips to
+   `REFUNDED`, and the entitlement is revoked. The backstop poller re-verifies as
+   confirmations accrue.
+
 ## ⚠️ Before going live (do not skip)
 
 - **Confirm MBITE network params** in `hd-address.service.ts` (currently PLACEHOLDER /

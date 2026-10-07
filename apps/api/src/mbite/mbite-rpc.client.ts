@@ -73,6 +73,30 @@ export class MbiteRpcClient {
     };
   }
 
+  /**
+   * Fetch a transaction's outputs + confirmation depth for refund verification.
+   * Requires the node to run with `txindex=1`. Handles both modern Core
+   * (`scriptPubKey.address`) and older (`scriptPubKey.addresses[]`) shapes.
+   */
+  async getTxPayments(
+    txid: string,
+  ): Promise<{ confirmations: number; outputs: Array<{ address?: string; value: number }> }> {
+    const tx = await this.call<{
+      confirmations?: number;
+      vout: Array<{
+        value: number;
+        scriptPubKey: { address?: string; addresses?: string[] };
+      }>;
+    }>("getrawtransaction", [txid, true]);
+    return {
+      confirmations: tx.confirmations ?? 0,
+      outputs: (tx.vout ?? []).map((o) => ({
+        address: o.scriptPubKey?.address ?? o.scriptPubKey?.addresses?.[0],
+        value: o.value,
+      })),
+    };
+  }
+
   /** Health probe that never throws — used by /health. */
   async pingSafe(): Promise<{ reachable: boolean; blocks?: number; error?: string }> {
     try {

@@ -119,6 +119,7 @@ model Order {
   updatedAt             DateTime    @updatedAt
 
   entitlement           Entitlement?
+  refund                Refund?
 
   @@index([status])
   @@index([merchantId])
@@ -127,10 +128,48 @@ model Order {
 
 /// What the buyer actually receives once PAID → FULFILLED.
 model Entitlement {
-  id          String   @id @default(cuid())
-  order       Order    @relation(fields: [orderId], references: [id])
-  orderId     String   @unique
+  id          String    @id @default(cuid())
+  order       Order     @relation(fields: [orderId], references: [id])
+  orderId     String    @unique
   /// e.g. the issued license key, or storage object key for signed URLs.
   payload     Json
-  deliveredAt DateTime @default(now())
+  deliveredAt DateTime  @default(now())
+  /// Set when a confirmed refund revokes access (PLAN.md §4).
+  revokedAt   DateTime?
+}
+
+enum RefundStatus {
+  /// A refund was asked for; merchant has not yet sent funds.
+  REQUESTED
+  /// Merchant broadcast a refund tx and recorded its id; awaiting on-chain proof.
+  SUBMITTED
+  /// Refund tx verified on-chain (pays the return address, enough confs). Terminal.
+  CONFIRMED
+  /// Merchant declined the request. Terminal.
+  REJECTED
+}
+
+/// Non-custodial refund record. The platform never moves funds — the merchant
+/// sends MBITE back from their own wallet and records the txid here; the
+/// platform verifies it on-chain and then flips the order to REFUNDED.
+model Refund {
+  id            String       @id @default(cuid())
+  order         Order        @relation(fields: [orderId], references: [id])
+  orderId       String       @unique
+  status        RefundStatus @default(REQUESTED)
+  reason        String?
+  /// Address the refund must pay (defaults to order.buyerReturnAddress).
+  refundAddress String
+  /// Amount to return, smallest MBITE unit (defaults to amount received).
+  amountMbite   BigInt
+  /// The merchant-broadcast refund tx, recorded by the merchant.
+  txid          String?
+  confirmations Int          @default(0)
+  requestedAt   DateTime     @default(now())
+  submittedAt   DateTime?
+  confirmedAt   DateTime?
+  rejectedAt    DateTime?
+  updatedAt     DateTime     @updatedAt
+
+  @@index([status])
 }

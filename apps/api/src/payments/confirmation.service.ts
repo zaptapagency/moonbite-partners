@@ -1,6 +1,7 @@
 import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { PaymentsService } from "./payments.service";
+import { RefundsService } from "../refunds/refunds.service";
 
 /**
  * BACKSTOP reconciler. The PRIMARY trigger is now ZmqListenerService, which
@@ -21,6 +22,7 @@ export class ConfirmationService implements OnModuleInit, OnModuleDestroy {
 
   constructor(
     private readonly payments: PaymentsService,
+    private readonly refunds: RefundsService,
     config: ConfigService,
   ) {
     this.pollMs = Number(config.get("CONFIRMATION_POLL_MS") ?? 60_000);
@@ -45,6 +47,16 @@ export class ConfirmationService implements OnModuleInit, OnModuleDestroy {
           await this.payments.reconcile(id);
         } catch (e) {
           this.log.warn(`Reconcile ${id} failed: ${String(e)}`);
+        }
+      }
+
+      // Re-verify submitted refunds as their confirmations accrue.
+      const refunds = await this.refunds.submittedRefunds();
+      for (const { id } of refunds) {
+        try {
+          await this.refunds.verify(id);
+        } catch (e) {
+          this.log.warn(`Refund verify ${id} failed: ${String(e)}`);
         }
       }
     } finally {

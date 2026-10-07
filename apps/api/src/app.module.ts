@@ -5,6 +5,7 @@ import { MbiteModule } from "./mbite/mbite.module";
 import { ProductsModule } from "./products/products.module";
 import { OrdersModule } from "./orders/orders.module";
 import { PaymentsModule } from "./payments/payments.module";
+import { RefundsModule } from "./refunds/refunds.module";
 import { MerchantsModule } from "./merchants/merchants.module";
 import { HealthController } from "./health/health.controller";
 
@@ -16,6 +17,7 @@ import { HealthController } from "./health/health.controller";
     MerchantsModule,
     ProductsModule,
     PaymentsModule,
+    RefundsModule,
     OrdersModule,
   ],
   controllers: [HealthController],
