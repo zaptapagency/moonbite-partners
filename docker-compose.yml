@@ -1,0 +1,55 @@
+# Local infra for MoonBite Partners. `docker compose up -d`.
+# Postgres + Redis start immediately. The MBITE node is a placeholder:
+# replace `image` with the official MoonBite node image (or build from source)
+# once the codebase lineage is confirmed (see PLAN.md §7 / Phase 0).
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moonbite
+      POSTGRES_PASSWORD: moonbite
+      POSTGRES_DB: moonbite
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moonbite"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+
+  # ── MBITE full node (PLACEHOLDER) ────────────────────────────
+  # The payment service talks to this over JSON-RPC + ZMQ.
+  # TODO(Phase 0): swap in the real MoonBite node image/build and
+  # mount a config enabling: rpc, txindex=1, and ZMQ publishers.
+  #
+  # mbite-node:
+  #   image: moonbite/node:latest
+  #   restart: unless-stopped
+  #   command: >
+  #     -server=1 -txindex=1 -rpcuser=moonbite -rpcpassword=change-me
+  #     -rpcbind=0.0.0.0 -rpcallowip=0.0.0.0/0
+  #     -zmqpubrawtx=tcp://0.0.0.0:28332
+  #     -zmqpubrawblock=tcp://0.0.0.0:28333
+  #   ports:
+  #     - "9332:9332"   # rpc
+  #     - "28332:28332" # zmq rawtx
+  #     - "28333:28333" # zmq rawblock
+  #   volumes:
+  #     - mbitedata:/root/.mbite
+
+volumes:
+  pgdata:
+  redisdata:
+  # mbitedata:

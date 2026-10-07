@@ -1,0 +1,23 @@
+import { Module } from "@nestjs/common";
+import { ConfigModule } from "@nestjs/config";
+import { PrismaModule } from "./prisma/prisma.module";
+import { MbiteModule } from "./mbite/mbite.module";
+import { ProductsModule } from "./products/products.module";
+import { OrdersModule } from "./orders/orders.module";
+import { PaymentsModule } from "./payments/payments.module";
+import { MerchantsModule } from "./merchants/merchants.module";
+import { HealthController } from "./health/health.controller";
+
+@Module({
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    PrismaModule,
+    MbiteModule,
+    MerchantsModule,
+    ProductsModule,
+    PaymentsModule,
+    OrdersModule,
+  ],
+  controllers: [HealthController],
+})
+export class AppModule {}
