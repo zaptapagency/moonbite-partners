@@ -1,5 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { DeliveryMethod, Order, Product } from "@prisma/client";
+import { DeliveryMethod, Order, Prisma, Product } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 
 /**
@@ -24,7 +24,7 @@ export class DeliveryService {
 
     await this.prisma.$transaction([
       this.prisma.entitlement.create({
-        data: { orderId: order.id, payload },
+        data: { orderId: order.id, payload: payload as Prisma.InputJsonObject },
       }),
       this.prisma.order.update({
         where: { id: order.id },

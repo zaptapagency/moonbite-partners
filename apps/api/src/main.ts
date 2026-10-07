@@ -3,7 +3,7 @@ import "reflect-metadata";
 // Money is stored as BigInt (smallest MBITE unit). JSON.stringify throws on
 // BigInt, so serialize it as a decimal string across every API response.
 (BigInt.prototype as unknown as { toJSON: () => string }).toJSON = function () {
-  return (this as bigint).toString();
+  return (this as unknown as bigint).toString();
 };
 
 import { NestFactory } from "@nestjs/core";
