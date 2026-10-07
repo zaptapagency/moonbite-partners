@@ -19,6 +19,13 @@ async function bootstrap() {
     new ValidationPipe({ whitelist: true, transform: true }),
   );
 
+  // Behind a reverse proxy/load balancer, trust X-Forwarded-For so rate limiting
+  // keys off the real client IP rather than the proxy's. Enable only when the
+  // proxy is trusted (TRUST_PROXY=1), otherwise clients could spoof the header.
+  if (config.get("TRUST_PROXY")) {
+    app.getHttpAdapter().getInstance().set("trust proxy", 1);
+  }
+
   const origins = (config.get<string>("CORS_ORIGINS") ?? "")
     .split(",")
     .map((o) => o.trim())

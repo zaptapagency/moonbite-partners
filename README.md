@@ -67,6 +67,12 @@ refund txid for on-chain verification). Auth is JWT (`Authorization: Bearer <tok
 [merchants.controller.ts](apps/api/src/merchants/merchants.controller.ts) and are guarded by
 [jwt-auth.guard.ts](apps/api/src/auth/jwt-auth.guard.ts).
 
+**Rate limiting** (`@nestjs/throttler`): a global per-IP default (`THROTTLE_LIMIT`/`THROTTLE_TTL`)
+plus tighter limits on auth — **5 logins/min** and **10 registrations/hour** per IP — to blunt
+brute-force and account spam. Set `TRUST_PROXY=1` behind a proxy so limits key off the real
+client IP. The default store is in-memory/per-instance; use a Redis storage adapter when
+running multiple API instances.
+
 ## The payment flow (code map)
 
 1. `POST /orders` → `PaymentsService.createInvoice` derives a fresh address from the

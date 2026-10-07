@@ -1,5 +1,7 @@
 import { Module } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { APP_GUARD } from "@nestjs/core";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
 import { MbiteModule } from "./mbite/mbite.module";
@@ -13,6 +15,22 @@ import { HealthController } from "./health/health.controller";
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    // Global default rate limit (per client IP). Auth routes tighten this
+    // further with @Throttle (see auth.controller.ts).
+    // NOTE: default storage is in-memory and per-instance. For multiple API
+    // instances, plug in a Redis storage adapter (we already run Redis) so the
+    // limit is shared — see PLAN.md §3/§8.
+    ThrottlerModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        throttlers: [
+          {
+            ttl: Number(config.get("THROTTLE_TTL") ?? 60_000),
+            limit: Number(config.get("THROTTLE_LIMIT") ?? 120),
+          },
+        ],
+      }),
+    }),
     PrismaModule,
     AuthModule,
     MbiteModule,
@@ -23,5 +41,6 @@ import { HealthController } from "./health/health.controller";
     OrdersModule,
   ],
   controllers: [HealthController],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
