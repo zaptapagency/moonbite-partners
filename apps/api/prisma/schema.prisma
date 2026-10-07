@@ -43,6 +43,12 @@ model Merchant {
   displayName   String
   /// bcrypt hash; null for seeded/demo merchants that have not set a password.
   passwordHash  String?
+  /// Email verification + password reset (tokens are sha256 hashes, not raw).
+  emailVerified      Boolean   @default(false)
+  emailVerifyToken   String?
+  emailVerifyExpires DateTime?
+  passwordResetToken   String?
+  passwordResetExpires DateTime?
   tier          MerchantTier @default(STARTER)
   /// BIP32 xpub used to derive a fresh pay-to address per order.
   settlementXpub String?

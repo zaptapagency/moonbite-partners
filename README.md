@@ -41,7 +41,7 @@ npm run stack:up      # builds images, starts Postgres + Redis + api + web
 npm run stack:down    # stop everything
 ```
 
-The API container applies the DB schema on boot (`prisma db push`). No MBITE node is
+The API container applies committed migrations on boot (`prisma migrate deploy`). No MBITE node is
 required — the stack runs without one (payments stay `AWAITING_PAYMENT`; `/health` reports
 the node as unreachable but still returns `200`). This is exactly what CI builds and
 smoke-tests (see [.github/workflows/ci.yml](.github/workflows/ci.yml)).
