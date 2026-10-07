@@ -63,6 +63,26 @@ The web image bakes `NEXT_PUBLIC_API_BASE_URL` at build time (the browser's API 
 To target a non-local API, set a repo variable `NEXT_PUBLIC_API_BASE_URL` (CI reads it) or
 rebuild with `--build-arg NEXT_PUBLIC_API_BASE_URL=https://api.example.com`.
 
+### Deploy (SSH → Docker host)
+
+After `publish`, the `deploy` job SSHes into a Docker host and rolls out the exact
+commit's images via [docker-compose.prod.yml](docker-compose.prod.yml) (which **pulls**
+GHCR images — no building on the server). It **auto-skips** unless `SSH_HOST` is set, so
+the pipeline works before you have a server.
+
+Configure these in repo **Settings → Secrets and variables → Actions** (the GitHub
+`production` environment can also require a reviewer before deploys run):
+
+| Secret | Purpose |
+|---|---|
+| `SSH_HOST`, `SSH_USER`, `SSH_KEY` | SSH target + private key (`SSH_PORT` optional, default 22) |
+| `JWT_SECRET` | API token signing secret |
+| `POSTGRES_PASSWORD` | DB password (in-stack Postgres) |
+
+The job logs the server into GHCR using the ephemeral `GITHUB_TOKEN` (valid for the run),
+pulls the `sha-<commit>` tags, and `docker compose up -d`. Deploy to a managed DB instead
+by pointing `DATABASE_URL`/`REDIS_URL` at external services in the prod compose.
+
 ## Local dev (hot reload)
 
 ```bash

@@ -140,3 +140,72 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.name }}
           # NEXT_PUBLIC_* are baked at build; only the web image needs it.
           build-args: ${{ matrix.name == 'web' && format('NEXT_PUBLIC_API_BASE_URL={0}', vars.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:4000') || '' }}
+
+  # Deploy the just-published images to a Docker host over SSH. Pulls the exact
+  # commit's images (immutable sha tags) and runs docker-compose.prod.yml there.
+  # Requires secrets: SSH_HOST, SSH_USER, SSH_KEY, JWT_SECRET, POSTGRES_PASSWORD
+  # (optional: SSH_PORT). The GitHub `production` environment can gate this with
+  # required reviewers. Skips automatically if SSH_HOST is not configured.
+  deploy:
+    needs: publish
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: production
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check deploy target is configured
+        id: gate
+        run: |
+          if [ -n "${{ secrets.SSH_HOST }}" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No SSH_HOST secret set — skipping deploy."
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compute image refs (lowercased repo)
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          REPO="${GITHUB_REPOSITORY,,}"
+          echo "API_IMAGE=ghcr.io/${REPO}-api:sha-${GITHUB_SHA}" >> "$GITHUB_ENV"
+          echo "WEB_IMAGE=ghcr.io/${REPO}-web:sha-${GITHUB_SHA}" >> "$GITHUB_ENV"
+
+      - name: Copy compose file to server
+        if: steps.gate.outputs.enabled == 'true'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          source: docker-compose.prod.yml
+          target: moonbite
+
+      - name: Pull images and roll out
+        if: steps.gate.outputs.enabled == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          envs: API_IMAGE,WEB_IMAGE,GHCR_USER,GHCR_TOKEN,JWT_SECRET,POSTGRES_PASSWORD,CORS_ORIGINS
+          script: |
+            set -e
+            cd moonbite
+            echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+            export API_IMAGE WEB_IMAGE JWT_SECRET POSTGRES_PASSWORD CORS_ORIGINS
+            docker compose -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml up -d
+            docker image prune -f
+            docker logout ghcr.io
+        env:
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}

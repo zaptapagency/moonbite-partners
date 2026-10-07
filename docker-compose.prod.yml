@@ -1,0 +1,68 @@
+# Production stack — pulls prebuilt GHCR images instead of building.
+# The deploy job sets API_IMAGE / WEB_IMAGE to immutable sha tags and provides
+# JWT_SECRET. Run manually with:
+#   API_IMAGE=ghcr.io/<owner>/<repo>-api:latest \
+#   WEB_IMAGE=ghcr.io/<owner>/<repo>-web:latest \
+#   JWT_SECRET=... docker compose -f docker-compose.prod.yml up -d
+#
+# Postgres/Redis run in-stack for a one-box deploy; point DATABASE_URL/REDIS_URL
+# at managed services instead for anything serious. DB/Redis ports are NOT
+# published — only web (3000) and api (4000) are reachable from outside.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: moonbite
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: moonbite
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moonbite"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    restart: always
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api:
+    image: ${API_IMAGE:?set API_IMAGE}
+    restart: always
+    environment:
+      API_PORT: 4000
+      DATABASE_URL: postgresql://moonbite:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/moonbite?schema=public
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      TRUST_PROXY: "1"
+      # MBITE_RPC_URL / MBITE_ZMQ_* — set when a node is available.
+    ports:
+      - "4000:4000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  web:
+    image: ${WEB_IMAGE:?set WEB_IMAGE}
+    restart: always
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  redisdata:
