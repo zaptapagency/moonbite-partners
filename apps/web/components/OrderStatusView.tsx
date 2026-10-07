@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { InvoiceView } from "@moonbite/shared";
 import { isTerminal, type OrderStatus } from "@moonbite/shared";
-import { getInvoice } from "../lib/api";
+import { getInvoice, getEntitlement, type Entitlement } from "../lib/api";
 
 const STATUS_COPY: Record<string, string> = {
   AWAITING_PAYMENT: "Waiting for your payment…",
@@ -69,6 +69,97 @@ function OrderId({ orderId }: { orderId: string }) {
   );
 }
 
+function CopyField({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div style={{ marginTop: 10 }}>
+      <div style={{ fontSize: 12, color: "#7c8699" }}>{label}</div>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 4 }}>
+        <code
+          style={{
+            flex: 1,
+            padding: "8px 10px",
+            borderRadius: 8,
+            background: "#0b0e14",
+            border: "1px solid #2a3344",
+            color: "#e6e8ec",
+            wordBreak: "break-all",
+          }}
+        >
+          {value}
+        </code>
+        <button
+          onClick={() => {
+            try {
+              void navigator.clipboard?.writeText(value);
+              setCopied(true);
+              setTimeout(() => setCopied(false), 1500);
+            } catch {
+              /* clipboard unavailable */
+            }
+          }}
+          style={{
+            padding: "8px 12px",
+            borderRadius: 8,
+            border: "none",
+            background: "#2a3344",
+            color: "#e6e8ec",
+            cursor: "pointer",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {copied ? "Copied" : "Copy"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/** Renders the actual delivered goods from the entitlement payload. */
+function DeliveryDetails({ ent }: { ent: Entitlement }) {
+  if (ent.key) {
+    return <CopyField label="Your license key" value={ent.key} />;
+  }
+  if (ent.downloadUrl) {
+    return (
+      <div style={{ marginTop: 12 }}>
+        <a
+          href={ent.downloadUrl}
+          style={{
+            display: "inline-block",
+            padding: "10px 18px",
+            borderRadius: 8,
+            background: "#8ab4ff",
+            color: "#0b0e14",
+            fontWeight: 700,
+            textDecoration: "none",
+          }}
+        >
+          Download your files ↓
+        </a>
+        <div style={{ ...subtle, fontSize: 12, marginTop: 8 }}>
+          This link is short-lived — if it expires, reopen this page to get a fresh one.
+        </div>
+      </div>
+    );
+  }
+  if (ent.access === "granted") {
+    return (
+      <p style={{ margin: "10px 0 0", color: "#cfe8d8" }}>
+        Your course access has been granted — sign in to the course to start.
+      </p>
+    );
+  }
+  if (ent.webhook?.delivered) {
+    return (
+      <p style={{ margin: "10px 0 0", color: "#cfe8d8" }}>
+        Your purchase was delivered to the seller&apos;s system and will be provisioned automatically.
+      </p>
+    );
+  }
+  return null;
+}
+
 /**
  * Live order/invoice view shared by the checkout flow and the shareable
  * `/orders/[id]` status link. Polls `getInvoice` (mirrors the checkout
@@ -77,6 +168,21 @@ function OrderId({ orderId }: { orderId: string }) {
 export default function OrderStatusView({ orderId }: { orderId: string }) {
   const [inv, setInv] = useState<InvoiceView | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [ent, setEnt] = useState<Entitlement | null>(null);
+  const [entErr, setEntErr] = useState<string | null>(null);
+
+  // Once fulfilled, fetch the actual delivered goods (license key / download /
+  // access). The orderId is the bearer capability for this endpoint.
+  useEffect(() => {
+    if (inv?.status !== "FULFILLED") return;
+    let alive = true;
+    getEntitlement(orderId)
+      .then((e) => alive && setEnt(e))
+      .catch(() => alive && setEntErr("Delivery details aren't available yet — refresh in a moment."));
+    return () => {
+      alive = false;
+    };
+  }, [inv?.status, orderId]);
 
   useEffect(() => {
     let alive = true;
@@ -131,17 +237,22 @@ export default function OrderStatusView({ orderId }: { orderId: string }) {
       <div style={{ maxWidth: 480 }}>
         <StatusBanner tone="success" title="Your purchase is complete 🎉">
           <p style={{ margin: 0, color: "#cfe8d8" }}>
-            Thanks! Your payment confirmed and the merchant issued your
-            delivery details (license key, download link, or access — however
-            this product is delivered). Check the delivery email you provided at
-            checkout.
+            Thanks! Your payment confirmed and your delivery is below. A copy was
+            also sent to the email you provided at checkout.
           </p>
+          {ent ? (
+            <DeliveryDetails ent={ent} />
+          ) : entErr ? (
+            <p style={{ ...subtle, margin: "10px 0 0" }}>{entErr}</p>
+          ) : (
+            <p style={{ ...subtle, margin: "10px 0 0" }}>Loading your delivery…</p>
+          )}
           <OrderId orderId={orderId} />
         </StatusBanner>
         <p style={{ ...subtle, fontSize: 13, marginTop: 16 }}>
-          Keep this page link to revisit your order status any time. If you did
-          not receive your delivery, contact the merchant with the order
-          reference above.
+          Keep this page link to revisit your order and re-fetch your delivery
+          any time. If something looks wrong, contact the merchant with the
+          order reference above.
         </p>
         <Link href="/" style={{ color: "#8ab4ff", display: "inline-block", marginTop: 8 }}>
           ← Back to products

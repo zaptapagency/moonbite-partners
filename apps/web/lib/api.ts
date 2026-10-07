@@ -34,3 +34,24 @@ export async function getInvoice(orderId: string): Promise<InvoiceView> {
   if (!res.ok) throw new Error("Failed to load invoice");
   return res.json();
 }
+
+/** What the buyer received once FULFILLED. Shape varies by delivery method. */
+export interface Entitlement {
+  /** LICENSE_KEY */
+  key?: string;
+  /** SIGNED_DOWNLOAD — a fresh short-lived URL is minted on each fetch */
+  objectKey?: string;
+  downloadUrl?: string;
+  /** WEBHOOK */
+  webhook?: { delivered: boolean; status?: number; attempts?: number; deliveredAt?: string };
+  /** COURSE_ACCESS */
+  access?: string;
+  courseRef?: string;
+  [k: string]: unknown;
+}
+
+export async function getEntitlement(orderId: string): Promise<Entitlement> {
+  const res = await fetch(`${BASE}/orders/${orderId}/entitlement`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Entitlement not ready");
+  return res.json();
+}
