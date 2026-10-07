@@ -199,36 +199,57 @@ jobs:
             cd moonbite
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
             export API_IMAGE WEB_IMAGE JWT_SECRET POSTGRES_PASSWORD CORS_ORIGINS
-            docker compose -f docker-compose.prod.yml pull
-            docker compose -f docker-compose.prod.yml up -d
-            docker logout ghcr.io
+            COMPOSE="docker compose -f docker-compose.prod.yml"
 
-            # --- smoke test: the rollout only counts if it actually serves ---
-            echo "Smoke test: waiting for API /health…"
-            ok=0
-            for i in $(seq 1 40); do
-              code=$(curl -s -o /tmp/mb_health -w "%{http_code}" http://localhost:4000/health || true)
-              if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/mb_health; then
-                echo "API healthy"; ok=1; break
+            # Remember the currently-deployed (last-good) images so we can roll
+            # back if the new ones fail the smoke test. Written only after a
+            # successful smoke test below; absent on the very first deploy.
+            PREV_API_IMAGE=""; PREV_WEB_IMAGE=""
+            if [ -f .last-good.env ]; then . ./.last-good.env; fi
+
+            # Returns 0 only if API /health is 200+ok AND web root is 200.
+            smoke() {
+              i=0
+              while [ "$i" -lt 40 ]; do
+                i=$((i + 1))
+                code=$(curl -s -o /tmp/mb_health -w "%{http_code}" http://localhost:4000/health || true)
+                if [ "$code" = "200" ] && grep -q '"status":"ok"' /tmp/mb_health; then
+                  wc=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
+                  if [ "$wc" = "200" ]; then echo "healthy (api+web)"; return 0; fi
+                  echo "…api ok, web '$wc' ($i)"
+                else
+                  echo "…waiting api '$code' ($i)"
+                fi
+                sleep 3
+              done
+              return 1
+            }
+
+            $COMPOSE pull
+            $COMPOSE up -d
+
+            if smoke; then
+              echo "Smoke test passed."
+              printf 'PREV_API_IMAGE=%s\nPREV_WEB_IMAGE=%s\n' "$API_IMAGE" "$WEB_IMAGE" > .last-good.env
+              docker image prune -f
+              docker logout ghcr.io
+            else
+              echo "Smoke test FAILED — recent logs:"
+              $COMPOSE logs --tail=120 api web || true
+              if [ -n "$PREV_API_IMAGE" ] && [ -n "$PREV_WEB_IMAGE" ]; then
+                echo "Rolling back to $PREV_API_IMAGE / $PREV_WEB_IMAGE …"
+                API_IMAGE="$PREV_API_IMAGE" WEB_IMAGE="$PREV_WEB_IMAGE" $COMPOSE up -d
+                if smoke; then
+                  echo "Rollback restored health."
+                else
+                  echo "WARNING: rollback did NOT pass smoke test — manual intervention needed."
+                fi
+              else
+                echo "No previous good version recorded — cannot roll back."
               fi
-              echo "…waiting ($i) got '$code'"; sleep 3
-            done
-            if [ "$ok" != "1" ]; then
-              echo "API failed smoke test — recent logs:"
-              docker compose -f docker-compose.prod.yml logs --tail=120 api
+              docker logout ghcr.io
               exit 1
             fi
-
-            echo "Smoke test: web root…"
-            webcode=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000 || true)
-            if [ "$webcode" != "200" ]; then
-              echo "Web failed smoke test (got '$webcode') — recent logs:"
-              docker compose -f docker-compose.prod.yml logs --tail=120 web
-              exit 1
-            fi
-
-            echo "Smoke test passed."
-            docker image prune -f
         env:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
