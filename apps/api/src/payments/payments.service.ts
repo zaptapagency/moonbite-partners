@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Order } from "@prisma/client";
-import { InvoiceView } from "@moonbite/shared";
+import { InvoiceView, OrderStatus, isTerminal } from "@moonbite/shared";
 import { PrismaService } from "../prisma/prisma.service";
 import { MbiteRpcClient } from "../mbite/mbite-rpc.client";
 import { HdAddressService } from "../mbite/hd-address.service";
 import { MerchantsService } from "../merchants/merchants.service";
 import { DeliveryService } from "./delivery.service";
-import { classifyPayment, coinsToUnits, feeFromBps, unitsToCoins } from "../common/money";
+import { decideNextStatus } from "./order-state-machine";
+import { coinsToUnits, feeFromBps, unitsToCoins } from "../common/money";
 
 /**
  * Invoice lifecycle — the heart of the platform (PLAN.md §4).
@@ -97,33 +98,36 @@ export class PaymentsService {
     });
     if (!order) throw new NotFoundException("Order not found");
 
-    // Already settled or dead — nothing to do.
-    if (["FULFILLED", "EXPIRED", "REFUNDED", "CANCELLED"].includes(order.status)) {
-      return order;
-    }
-
-    // Expire unpaid invoices past their quote window.
-    if (order.status === "AWAITING_PAYMENT" && order.quoteExpiresAt < new Date()) {
-      return this.prisma.order.update({
-        where: { id: order.id },
-        data: { status: "EXPIRED" },
-      });
-    }
+    // Terminal — nothing to do, and skip the RPC round-trips.
+    const current = order.status as unknown as OrderStatus;
+    if (isTerminal(current)) return order;
 
     const scan = await this.rpc.scanAddress(order.payToAddress);
     const received = coinsToUnits(scan.total);
-    if (received === 0n) return order;
 
-    // Determine confirmations from the shallowest funding UTXO.
-    const tipHeight = await this.rpc.getBlockCount();
-    const minHeight = Math.min(...scan.utxos.map((u) => u.height).filter((h) => h > 0));
-    const confirmations = Number.isFinite(minHeight) ? tipHeight - minHeight + 1 : 0;
+    // Confirmations come from the shallowest funding UTXO (0 if none yet).
+    let confirmations = 0;
+    if (received > 0n) {
+      const heights = scan.utxos.map((u) => u.height).filter((h) => h > 0);
+      if (heights.length) {
+        const tipHeight = await this.rpc.getBlockCount();
+        confirmations = tipHeight - Math.min(...heights) + 1;
+      }
+    }
 
-    const band = classifyPayment(order.amountMbite, received, this.tolerance);
-    let status = order.status;
-    if (band === "under") status = "UNDERPAID";
-    else if (confirmations >= order.requiredConfirmations) status = "PAID";
-    else status = "DETECTED";
+    // All transition policy lives in the pure state machine.
+    const status = decideNextStatus({
+      current,
+      quoteExpired: order.quoteExpiresAt < new Date(),
+      amountUnits: order.amountMbite,
+      receivedUnits: received,
+      confirmations,
+      requiredConfirmations: order.requiredConfirmations,
+      tolerance: this.tolerance,
+    });
+
+    // Nothing on-chain and no status change → avoid a pointless write.
+    if (received === 0n && status === current) return order;
 
     const updated = await this.prisma.order.update({
       where: { id: order.id },
@@ -131,13 +135,13 @@ export class PaymentsService {
         receivedMbite: received,
         confirmations,
         txid: scan.utxos[0]?.txid ?? order.txid,
-        status,
-        paidAt: status === "PAID" && !order.paidAt ? new Date() : order.paidAt,
+        status: status as unknown as Order["status"],
+        paidAt: status === OrderStatus.PAID && !order.paidAt ? new Date() : order.paidAt,
       },
       include: { product: true },
     });
 
-    if (status === "PAID") {
+    if (status === OrderStatus.PAID) {
       try {
         await this.delivery.fulfill(updated);
       } catch (e) {

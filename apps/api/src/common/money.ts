@@ -12,11 +12,17 @@ export function coinsToUnits(coins: number): bigint {
   return BigInt(Math.round(coins * Number(UNITS_PER_MBITE)));
 }
 
-/** BigInt units → decimal string for display/serialization. */
+/** BigInt units → decimal string for display/serialization (trailing zeros trimmed). */
 export function unitsToCoins(units: bigint): string {
-  const whole = units / UNITS_PER_MBITE;
-  const frac = (units % UNITS_PER_MBITE).toString().padStart(MBITE_DECIMALS, "0");
-  return `${whole}.${frac}`.replace(/\.?0+$/, (m) => (m.includes(".") ? "" : m));
+  const neg = units < 0n;
+  const abs = neg ? -units : units;
+  const whole = abs / UNITS_PER_MBITE;
+  const frac = (abs % UNITS_PER_MBITE)
+    .toString()
+    .padStart(MBITE_DECIMALS, "0")
+    .replace(/0+$/, "");
+  const s = frac ? `${whole}.${frac}` : `${whole}`;
+  return neg ? `-${s}` : s;
 }
 
 /** Platform fee in units from an amount and basis points (300 = 3%). */
