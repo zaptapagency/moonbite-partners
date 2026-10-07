@@ -59,6 +59,26 @@ const btn: React.CSSProperties = {
 };
 const subtle = { color: "#9aa4b2" as const };
 
+const PAGE_SIZE = 10;
+const AUTO_REFRESH_MS = 8000;
+
+/** Small "updated Xs ago" indicator for the auto-refreshing panels. */
+function RefreshNote({ at }: { at: number | null }) {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => force((n) => n + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+  if (!at) return null;
+  const secs = Math.max(0, Math.round((Date.now() - at) / 1000));
+  const label = secs < 2 ? "just now" : `${secs}s ago`;
+  return (
+    <span style={{ ...subtle, fontSize: 12 }}>
+      auto-refreshing · updated {label}
+    </span>
+  );
+}
+
 export default function DashboardPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [booting, setBooting] = useState(true);
@@ -214,14 +234,14 @@ function Overview({
 }
 
 function Products({ setErr }: { setErr: (s: string | null) => void }) {
-  const [items, setItems] = useState<DashProduct[]>([]);
+  const [items, setItems] = useState<DashProduct[] | null>(null);
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
   const [method, setMethod] = useState("LICENSE_KEY");
   const [busy, setBusy] = useState(false);
 
   const refresh = useCallback(() => {
-    getMyProducts().then(setItems).catch(() => {});
+    getMyProducts().then(setItems).catch(() => setItems([]));
   }, []);
   useEffect(refresh, [refresh]);
 
@@ -279,7 +299,7 @@ function Products({ setErr }: { setErr: (s: string | null) => void }) {
           </tr>
         </thead>
         <tbody>
-          {items.map((p) => (
+          {(items ?? []).map((p) => (
             <tr key={p.id} style={{ borderTop: "1px solid #1c2230" }}>
               <td>{p.title}</td>
               <td>{fmtMbite(p.priceMbite)} MBITE</td>
@@ -288,10 +308,17 @@ function Products({ setErr }: { setErr: (s: string | null) => void }) {
               <td>{p._count.licenseKeys}</td>
             </tr>
           ))}
-          {items.length === 0 && (
+          {items === null && (
             <tr>
               <td colSpan={5} style={{ ...subtle, paddingTop: 12 }}>
-                No products yet.
+                Loading products…
+              </td>
+            </tr>
+          )}
+          {items !== null && items.length === 0 && (
+            <tr>
+              <td colSpan={5} style={{ ...subtle, paddingTop: 12 }}>
+                No products yet — add your first one above.
               </td>
             </tr>
           )}
@@ -302,59 +329,127 @@ function Products({ setErr }: { setErr: (s: string | null) => void }) {
 }
 
 function Orders({ setErr }: { setErr: (s: string | null) => void }) {
-  const [items, setItems] = useState<DashOrder[]>([]);
-  useEffect(() => {
-    getMyOrders().then(setItems).catch((e) => setErr(e.message));
+  const [items, setItems] = useState<DashOrder[] | null>(null);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await getMyOrders();
+      setItems(data);
+      setUpdatedAt(Date.now());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load orders");
+    }
   }, [setErr]);
+
+  useEffect(() => {
+    void refresh();
+    const t = setInterval(() => void refresh(), AUTO_REFRESH_MS);
+    return () => clearInterval(t);
+  }, [refresh]);
+
+  const shown = items ? items.slice(0, visible) : [];
 
   return (
     <div style={card}>
-      <h2 style={{ marginTop: 0 }}>Orders</h2>
-      <table style={{ width: "100%", borderCollapse: "collapse" }}>
-        <thead>
-          <tr style={{ textAlign: "left", color: "#7c8699" }}>
-            <th>Product</th>
-            <th>Status</th>
-            <th>Amount</th>
-            <th>Received</th>
-            <th>Confs</th>
-          </tr>
-        </thead>
-        <tbody>
-          {items.map((o) => (
-            <tr key={o.id} style={{ borderTop: "1px solid #1c2230" }}>
-              <td>{o.product.title}</td>
-              <td>
-                <StatusPill status={o.status} />
-                {o.refund && <span style={{ ...subtle, fontSize: 12 }}> · refund {o.refund.status}</span>}
-              </td>
-              <td>{fmtMbite(o.amountMbite)}</td>
-              <td>{fmtMbite(o.receivedMbite)}</td>
-              <td>
-                {o.confirmations}/{o.requiredConfirmations}
-              </td>
-            </tr>
-          ))}
-          {items.length === 0 && (
-            <tr>
-              <td colSpan={5} style={{ ...subtle, paddingTop: 12 }}>
-                No orders yet.
-              </td>
-            </tr>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>
+          Orders {items && items.length > 0 && <span style={subtle}>({items.length})</span>}
+        </h2>
+        <RefreshNote at={updatedAt} />
+      </div>
+
+      {items === null ? (
+        <p style={{ ...subtle, marginBottom: 0 }}>Loading orders…</p>
+      ) : items.length === 0 ? (
+        <p style={{ ...subtle, marginBottom: 0 }}>
+          No orders yet. Share your product links to start selling.
+        </p>
+      ) : (
+        <>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", marginTop: 12 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "#7c8699" }}>
+                  <th style={{ padding: "6px 8px 6px 0" }}>Product</th>
+                  <th style={{ padding: "6px 8px" }}>Status</th>
+                  <th style={{ padding: "6px 8px" }}>Amount</th>
+                  <th style={{ padding: "6px 8px" }}>Received</th>
+                  <th style={{ padding: "6px 8px" }}>Confs</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((o) => (
+                  <tr key={o.id} style={{ borderTop: "1px solid #1c2230" }}>
+                    <td style={{ padding: "8px 8px 8px 0" }}>
+                      <a
+                        href={`/orders/${o.id}`}
+                        style={{ color: "#e6e8ec", textDecoration: "none" }}
+                        title="View buyer order page"
+                      >
+                        {o.product.title}
+                      </a>
+                    </td>
+                    <td style={{ padding: "8px" }}>
+                      <StatusPill status={o.status} />
+                      {o.refund && (
+                        <span style={{ ...subtle, fontSize: 12 }}> · refund {o.refund.status}</span>
+                      )}
+                    </td>
+                    <td style={{ padding: "8px" }}>{fmtMbite(o.amountMbite)}</td>
+                    <td style={{ padding: "8px" }}>{fmtMbite(o.receivedMbite)}</td>
+                    <td style={{ padding: "8px" }}>
+                      {o.confirmations}/{o.requiredConfirmations}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {items.length > visible && (
+            <button
+              style={{ ...btn, background: "#2a3344", color: "#e6e8ec", marginTop: 14 }}
+              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+            >
+              Show more ({items.length - visible})
+            </button>
           )}
-        </tbody>
-      </table>
+        </>
+      )}
     </div>
   );
 }
 
 function Refunds({ setErr }: { setErr: (s: string | null) => void }) {
-  const [items, setItems] = useState<DashRefund[]>([]);
+  const [items, setItems] = useState<DashRefund[] | null>(null);
+  const [visible, setVisible] = useState(PAGE_SIZE);
+  const [updatedAt, setUpdatedAt] = useState<number | null>(null);
   const [txids, setTxids] = useState<Record<string, string>>({});
-  const refresh = useCallback(() => {
-    getMyRefunds().then(setItems).catch((e) => setErr(e.message));
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await getMyRefunds();
+      setItems(data);
+      setUpdatedAt(Date.now());
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Failed to load refunds");
+    }
   }, [setErr]);
-  useEffect(refresh, [refresh]);
+
+  useEffect(() => {
+    void refresh();
+    const t = setInterval(() => void refresh(), AUTO_REFRESH_MS);
+    return () => clearInterval(t);
+  }, [refresh]);
 
   async function doSubmit(id: string) {
     setErr(null);
@@ -375,45 +470,76 @@ function Refunds({ setErr }: { setErr: (s: string | null) => void }) {
     }
   }
 
+  const shown = items ? items.slice(0, visible) : [];
+
   return (
     <div style={card}>
-      <h2 style={{ marginTop: 0 }}>Refunds</h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          gap: 8,
+          flexWrap: "wrap",
+        }}
+      >
+        <h2 style={{ marginTop: 0, marginBottom: 0 }}>
+          Refunds {items && items.length > 0 && <span style={subtle}>({items.length})</span>}
+        </h2>
+        <RefreshNote at={updatedAt} />
+      </div>
       <p style={subtle}>
         Non-custodial: send MBITE back to the refund address from your wallet, then paste the txid to
         record it. We verify it on-chain and mark the order refunded.
       </p>
-      {items.map((r) => (
-        <div key={r.id} style={{ borderTop: "1px solid #1c2230", paddingTop: 12, marginTop: 12 }}>
-          <div>
-            <strong>{r.order.product.title}</strong> · <StatusPill status={r.status} /> ·{" "}
-            {fmtMbite(r.amountMbite)} MBITE
-          </div>
-          <div style={{ ...subtle, fontSize: 13, wordBreak: "break-all" }}>
-            → {r.refundAddress}
-            {r.txid && <> · tx {r.txid.slice(0, 16)}… ({r.confirmations} confs)</>}
-          </div>
-          {(r.status === "REQUESTED" || r.status === "SUBMITTED") && (
-            <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
-              <input
-                style={{ ...input, marginTop: 0, flex: "1 1 240px" }}
-                placeholder="refund txid"
-                value={txids[r.id] ?? ""}
-                onChange={(e) => setTxids({ ...txids, [r.id]: e.target.value })}
-              />
-              <button style={btn} onClick={() => doSubmit(r.id)}>
-                Record tx
-              </button>
-              <button
-                style={{ ...btn, background: "#2a3344", color: "#e6e8ec" }}
-                onClick={() => doReject(r.id)}
-              >
-                Reject
-              </button>
+
+      {items === null ? (
+        <p style={{ ...subtle, marginBottom: 0 }}>Loading refunds…</p>
+      ) : items.length === 0 ? (
+        <p style={{ ...subtle, marginBottom: 0 }}>No refund requests.</p>
+      ) : (
+        <>
+          {shown.map((r) => (
+            <div key={r.id} style={{ borderTop: "1px solid #1c2230", paddingTop: 12, marginTop: 12 }}>
+              <div>
+                <strong>{r.order.product.title}</strong> · <StatusPill status={r.status} /> ·{" "}
+                {fmtMbite(r.amountMbite)} MBITE
+              </div>
+              <div style={{ ...subtle, fontSize: 13, wordBreak: "break-all" }}>
+                → {r.refundAddress}
+                {r.txid && <> · tx {r.txid.slice(0, 16)}… ({r.confirmations} confs)</>}
+              </div>
+              {(r.status === "REQUESTED" || r.status === "SUBMITTED") && (
+                <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
+                  <input
+                    style={{ ...input, marginTop: 0, flex: "1 1 240px" }}
+                    placeholder="refund txid"
+                    value={txids[r.id] ?? ""}
+                    onChange={(e) => setTxids({ ...txids, [r.id]: e.target.value })}
+                  />
+                  <button style={btn} onClick={() => doSubmit(r.id)}>
+                    Record tx
+                  </button>
+                  <button
+                    style={{ ...btn, background: "#2a3344", color: "#e6e8ec" }}
+                    onClick={() => doReject(r.id)}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
             </div>
+          ))}
+          {items.length > visible && (
+            <button
+              style={{ ...btn, background: "#2a3344", color: "#e6e8ec", marginTop: 14 }}
+              onClick={() => setVisible((v) => v + PAGE_SIZE)}
+            >
+              Show more ({items.length - visible})
+            </button>
           )}
-        </div>
-      ))}
-      {items.length === 0 && <p style={subtle}>No refund requests.</p>}
+        </>
+      )}
     </div>
   );
 }
