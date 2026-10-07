@@ -3,13 +3,22 @@ import { MbiteModule } from "../mbite/mbite.module";
 import { MerchantsModule } from "../merchants/merchants.module";
 import { RefundsModule } from "../refunds/refunds.module";
 import { ReconcileQueueModule } from "../queue/reconcile-queue.module";
+import { DeliveryModule } from "../delivery/delivery.module";
+import { MailModule } from "../mail/mail.module";
 import { PaymentsService } from "./payments.service";
 import { DeliveryService } from "./delivery.service";
 import { ConfirmationService } from "./confirmation.service";
 import { ZmqListenerService } from "./zmq-listener.service";
 
 @Module({
-  imports: [MbiteModule, MerchantsModule, RefundsModule, ReconcileQueueModule],
+  imports: [
+    MbiteModule,
+    MerchantsModule,
+    RefundsModule,
+    ReconcileQueueModule,
+    DeliveryModule,
+    MailModule,
+  ],
   providers: [PaymentsService, DeliveryService, ConfirmationService, ZmqListenerService],
   exports: [PaymentsService],
 })

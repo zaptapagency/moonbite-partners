@@ -6,6 +6,7 @@ import { PrismaService } from "../prisma/prisma.service";
 import { MbiteRpcClient } from "../mbite/mbite-rpc.client";
 import { HdAddressService } from "../mbite/hd-address.service";
 import { MerchantsService } from "../merchants/merchants.service";
+import { StorageService } from "../delivery/storage.service";
 import { DeliveryService } from "./delivery.service";
 import { decideNextStatus } from "./order-state-machine";
 import { coinsToUnits, feeFromBps, unitsToCoins } from "../common/money";
@@ -27,6 +28,7 @@ export class PaymentsService {
     private readonly hd: HdAddressService,
     private readonly merchants: MerchantsService,
     private readonly delivery: DeliveryService,
+    private readonly storage: StorageService,
     config: ConfigService,
   ) {
     this.requiredConfs = Number(config.get("PAYMENT_CONFIRMATIONS") ?? 2);
@@ -150,6 +152,28 @@ export class PaymentsService {
       }
     }
     return updated;
+  }
+
+  /**
+   * The buyer's entitlement for a FULFILLED order (Workstream B §5). The
+   * orderId is the bearer capability. 404 until the order is fulfilled. For
+   * signed downloads we re-mint a fresh short-lived URL from the stored
+   * objectKey so the returned link is always currently valid.
+   */
+  async getEntitlement(orderId: string): Promise<Record<string, unknown>> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { entitlement: true },
+    });
+    if (!order || order.status !== "FULFILLED" || !order.entitlement) {
+      throw new NotFoundException("Entitlement not available");
+    }
+
+    const payload = { ...(order.entitlement.payload as Record<string, unknown>) };
+    if (typeof payload.objectKey === "string") {
+      payload.downloadUrl = this.storage.buildSignedUrl(order.id, payload.objectKey);
+    }
+    return payload;
   }
 
   /** Orders that still need chain reconciliation. */

@@ -1,5 +1,15 @@
-import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
-import { IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
+import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUrl,
+  Min,
+  MinLength,
+} from "class-validator";
 import { DeliveryMethod } from "@prisma/client";
 import { JwtAuthGuard } from "../auth/jwt-auth.guard";
 import { CurrentMerchant, AuthMerchant } from "../auth/current-merchant.decorator";
@@ -12,6 +22,16 @@ class CreateProductDto {
   @IsInt() @Min(1) priceMbiteUnits!: number;
   @IsEnum(DeliveryMethod) deliveryMethod!: DeliveryMethod;
   @IsOptional() deliveryConfig?: unknown;
+}
+
+class AddKeysDto {
+  @IsArray() @ArrayNotEmpty() @IsString({ each: true }) keys!: string[];
+}
+
+class SetDeliveryDto {
+  @IsOptional() @IsString() objectKey?: string;
+  @IsOptional() @IsUrl({ require_tld: false }) webhookUrl?: string;
+  @IsOptional() @IsString() @MinLength(16) webhookSecret?: string;
 }
 
 @Controller("products")
@@ -40,5 +60,27 @@ export class ProductsController {
       deliveryMethod: dto.deliveryMethod,
       deliveryConfig: dto.deliveryConfig,
     });
+  }
+
+  /** Bulk-add license keys to a product's pool (owner only). */
+  @UseGuards(JwtAuthGuard)
+  @Post(":id/keys")
+  addKeys(
+    @CurrentMerchant() me: AuthMerchant,
+    @Param("id") id: string,
+    @Body() dto: AddKeysDto,
+  ) {
+    return this.products.addLicenseKeys(me.id, id, dto.keys);
+  }
+
+  /** Set delivery config: objectKey / webhookUrl / webhookSecret (owner only). */
+  @UseGuards(JwtAuthGuard)
+  @Put(":id/delivery")
+  setDelivery(
+    @CurrentMerchant() me: AuthMerchant,
+    @Param("id") id: string,
+    @Body() dto: SetDeliveryDto,
+  ) {
+    return this.products.setDeliveryConfig(me.id, id, dto);
   }
 }
