@@ -34,4 +34,14 @@ export class OrdersController {
   getInvoice(@Param("id") id: string): Promise<InvoiceView> {
     return this.payments.getInvoiceView(id);
   }
+
+  /**
+   * Fetch what the buyer received once the order is FULFILLED (license key,
+   * fresh download link, access note). The orderId acts as the bearer
+   * capability; 404 until fulfilled.
+   */
+  @Get(":id/entitlement")
+  getEntitlement(@Param("id") id: string): Promise<Record<string, unknown>> {
+    return this.payments.getEntitlement(id);
+  }
 }

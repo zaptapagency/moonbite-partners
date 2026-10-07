@@ -12,6 +12,8 @@ import { OrdersModule } from "./orders/orders.module";
 import { PaymentsModule } from "./payments/payments.module";
 import { RefundsModule } from "./refunds/refunds.module";
 import { MerchantsModule } from "./merchants/merchants.module";
+import { DeliveryModule } from "./delivery/delivery.module";
+import { MailModule } from "./mail/mail.module";
 import { HealthController } from "./health/health.controller";
 
 @Module({
@@ -53,6 +55,8 @@ import { HealthController } from "./health/health.controller";
     MbiteModule,
     MerchantsModule,
     ProductsModule,
+    MailModule,
+    DeliveryModule,
     PaymentsModule,
     RefundsModule,
     OrdersModule,
