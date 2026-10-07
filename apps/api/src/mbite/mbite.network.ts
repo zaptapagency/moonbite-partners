@@ -96,6 +96,11 @@ function usingDefaults(net: bitcoin.networks.Network): boolean {
   );
 }
 
+/** True if the effective network params are still the baked-in placeholders. */
+export function isUsingPlaceholderParams(net: bitcoin.networks.Network = MBITE_NETWORK): boolean {
+  return usingDefaults(net);
+}
+
 const hex = (n: number, bytes: number): string => "0x" + n.toString(16).padStart(bytes * 2, "0");
 
 let logged = false;

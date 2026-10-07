@@ -127,3 +127,10 @@ export const submitRefund = (id: string, txid: string) =>
 
 export const rejectRefund = (id: string, reason?: string) =>
   req(`/refunds/${id}/reject`, { method: "POST", body: JSON.stringify({ reason }) }, true);
+
+// --- public account flows (token in the URL, no auth header) ---
+export const verifyEmail = (token: string) =>
+  req("/auth/email/verify", { method: "POST", body: JSON.stringify({ token }) });
+
+export const resetPassword = (token: string, password: string) =>
+  req("/auth/password/reset", { method: "POST", body: JSON.stringify({ token, password }) });

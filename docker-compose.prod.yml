@@ -44,9 +44,30 @@ services:
       DATABASE_URL: postgresql://moonbite:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}@postgres:5432/moonbite?schema=public
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      WEB_BASE_URL: ${WEB_BASE_URL:?set WEB_BASE_URL}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:?set PUBLIC_BASE_URL}
       JWT_SECRET: ${JWT_SECRET:?set JWT_SECRET}
+      DOWNLOAD_URL_SECRET: ${DOWNLOAD_URL_SECRET:?set DOWNLOAD_URL_SECRET}
       TRUST_PROXY: "1"
-      # MBITE_RPC_URL / MBITE_ZMQ_* — set when a node is available.
+      # Transactional email (required in prod for verify/reset/receipts):
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-MoonBite <no-reply@moonbite.example>}
+      STORAGE_BASE_URL: ${STORAGE_BASE_URL:-}
+      # MBITE node + real chain params — set these to go live (see LAUNCH.md):
+      MBITE_RPC_URL: ${MBITE_RPC_URL:-}
+      MBITE_RPC_USER: ${MBITE_RPC_USER:-}
+      MBITE_RPC_PASSWORD: ${MBITE_RPC_PASSWORD:-}
+      MBITE_ZMQ_RAWTX: ${MBITE_ZMQ_RAWTX:-}
+      MBITE_ZMQ_RAWBLOCK: ${MBITE_ZMQ_RAWBLOCK:-}
+      MBITE_BECH32_HRP: ${MBITE_BECH32_HRP:-}
+      MBITE_PUBKEYHASH: ${MBITE_PUBKEYHASH:-}
+      MBITE_SCRIPTHASH: ${MBITE_SCRIPTHASH:-}
+      MBITE_WIF: ${MBITE_WIF:-}
+      MBITE_BIP32_PUBLIC: ${MBITE_BIP32_PUBLIC:-}
+      MBITE_BIP32_PRIVATE: ${MBITE_BIP32_PRIVATE:-}
     ports:
       - "4000:4000"
     depends_on:

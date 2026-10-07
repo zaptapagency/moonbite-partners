@@ -1,6 +1,7 @@
 import { Global, Module, Logger } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
+import { MailModule } from "../mail/mail.module";
 import { AuthService } from "./auth.service";
 import { AuthController } from "./auth.controller";
 import { JwtAuthGuard } from "./jwt-auth.guard";
@@ -28,6 +29,7 @@ import { JwtAuthGuard } from "./jwt-auth.guard";
         };
       },
     }),
+    MailModule,
   ],
   providers: [AuthService, JwtAuthGuard],
   controllers: [AuthController],

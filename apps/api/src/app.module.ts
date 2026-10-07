@@ -4,6 +4,7 @@ import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { BullModule } from "@nestjs/bullmq";
 import { PrismaModule } from "./prisma/prisma.module";
+import { validateEnv } from "./config/env.validation";
 import { ReconcileProcessorModule } from "./queue/reconcile-processor.module";
 import { AuthModule } from "./auth/auth.module";
 import { MbiteModule } from "./mbite/mbite.module";
@@ -15,10 +16,11 @@ import { MerchantsModule } from "./merchants/merchants.module";
 import { DeliveryModule } from "./delivery/delivery.module";
 import { MailModule } from "./mail/mail.module";
 import { HealthController } from "./health/health.controller";
+import { ReadinessController } from "./health/readiness.controller";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, validate: validateEnv }),
     // Global default rate limit (per client IP). Auth routes tighten this
     // further with @Throttle (see auth.controller.ts).
     // NOTE: default storage is in-memory and per-instance. For multiple API
@@ -62,7 +64,7 @@ import { HealthController } from "./health/health.controller";
     OrdersModule,
     ReconcileProcessorModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ReadinessController],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

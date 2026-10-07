@@ -6,9 +6,11 @@ import {
   UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
 import * as bcrypt from "bcryptjs";
 import { createHash, randomBytes } from "crypto";
 import { PrismaService } from "../prisma/prisma.service";
+import { MailService } from "../mail/mail.service";
 
 /** Tokens are emailed as raw strings but only their sha256 is stored at rest. */
 function hashToken(token: string): string {
@@ -28,7 +30,13 @@ export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwt: JwtService,
+    private readonly mail: MailService,
+    private readonly config: ConfigService,
   ) {}
+
+  private webBase(): string {
+    return this.config.get<string>("WEB_BASE_URL") ?? "http://localhost:3000";
+  }
 
   async register(email: string, password: string, displayName: string): Promise<AuthResult> {
     const existing = await this.prisma.merchant.findUnique({ where: { email } });
@@ -38,6 +46,8 @@ export class AuthService {
     const merchant = await this.prisma.merchant.create({
       data: { email, displayName, passwordHash },
     });
+    // Fire off a verification email (best-effort — never blocks signup).
+    void this.requestEmailVerification(merchant.id).catch(() => undefined);
     return this.sign(merchant.id, merchant.email, merchant.displayName);
   }
 
@@ -54,6 +64,8 @@ export class AuthService {
   // ── Email verification ────────────────────────────────────────────────
   /** Issue a verification token. Returned only in non-prod; prod emails it (TODO: mail). */
   async requestEmailVerification(merchantId: string): Promise<{ sent: boolean; token?: string }> {
+    const merchant = await this.prisma.merchant.findUnique({ where: { id: merchantId } });
+    if (!merchant) throw new BadRequestException("Merchant not found");
     const token = randomBytes(32).toString("hex");
     await this.prisma.merchant.update({
       where: { id: merchantId },
@@ -62,8 +74,9 @@ export class AuthService {
         emailVerifyExpires: new Date(Date.now() + 24 * 60 * 60 * 1000),
       },
     });
-    this.log.log(`Email verification requested for ${merchantId}`);
-    // TODO(mail): send the raw token/link to the merchant's email.
+    const url = `${this.webBase()}/account/verify?token=${token}`;
+    await this.mail.sendVerificationEmail(merchant.email, url);
+    this.log.log(`Email verification sent for ${merchantId}`);
     return isProd() ? { sent: true } : { sent: true, token };
   }
 
@@ -92,8 +105,9 @@ export class AuthService {
         passwordResetExpires: new Date(Date.now() + 60 * 60 * 1000),
       },
     });
-    this.log.log(`Password reset requested for ${merchant.id}`);
-    // TODO(mail): send the raw token/link to the merchant's email.
+    const url = `${this.webBase()}/account/reset?token=${token}`;
+    await this.mail.sendPasswordResetEmail(merchant.email, url);
+    this.log.log(`Password reset sent for ${merchant.id}`);
     return isProd() ? { sent: true } : { sent: true, token };
   }
 

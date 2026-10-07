@@ -193,12 +193,15 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_KEY }}
           port: ${{ secrets.SSH_PORT || 22 }}
-          envs: API_IMAGE,WEB_IMAGE,GHCR_USER,GHCR_TOKEN,JWT_SECRET,POSTGRES_PASSWORD,CORS_ORIGINS
+          envs: API_IMAGE,WEB_IMAGE,GHCR_USER,GHCR_TOKEN,JWT_SECRET,DOWNLOAD_URL_SECRET,POSTGRES_PASSWORD,CORS_ORIGINS,WEB_BASE_URL,PUBLIC_BASE_URL,SMTP_HOST,SMTP_PORT,SMTP_USER,SMTP_PASS,MAIL_FROM,STORAGE_BASE_URL,MBITE_RPC_URL,MBITE_RPC_USER,MBITE_RPC_PASSWORD,MBITE_ZMQ_RAWTX,MBITE_ZMQ_RAWBLOCK,MBITE_BECH32_HRP,MBITE_PUBKEYHASH,MBITE_SCRIPTHASH,MBITE_WIF,MBITE_BIP32_PUBLIC,MBITE_BIP32_PRIVATE
           script: |
             set -e
             cd moonbite
             echo "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-            export API_IMAGE WEB_IMAGE JWT_SECRET POSTGRES_PASSWORD CORS_ORIGINS
+            export API_IMAGE WEB_IMAGE JWT_SECRET DOWNLOAD_URL_SECRET POSTGRES_PASSWORD CORS_ORIGINS \
+              WEB_BASE_URL PUBLIC_BASE_URL SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS MAIL_FROM STORAGE_BASE_URL \
+              MBITE_RPC_URL MBITE_RPC_USER MBITE_RPC_PASSWORD MBITE_ZMQ_RAWTX MBITE_ZMQ_RAWBLOCK \
+              MBITE_BECH32_HRP MBITE_PUBKEYHASH MBITE_SCRIPTHASH MBITE_WIF MBITE_BIP32_PUBLIC MBITE_BIP32_PRIVATE
             COMPOSE="docker compose -f docker-compose.prod.yml"
 
             # Remember the currently-deployed (last-good) images so we can roll
@@ -254,8 +257,30 @@ jobs:
           GHCR_USER: ${{ github.actor }}
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DOWNLOAD_URL_SECRET: ${{ secrets.DOWNLOAD_URL_SECRET }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           CORS_ORIGINS: ${{ vars.CORS_ORIGINS }}
+          WEB_BASE_URL: ${{ vars.WEB_BASE_URL }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+          # Transactional email (required in prod when SMTP_HOST is set)
+          SMTP_HOST: ${{ secrets.SMTP_HOST }}
+          SMTP_PORT: ${{ vars.SMTP_PORT }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          MAIL_FROM: ${{ vars.MAIL_FROM }}
+          STORAGE_BASE_URL: ${{ vars.STORAGE_BASE_URL }}
+          # MBITE node + real chain params (set to go live — see LAUNCH.md)
+          MBITE_RPC_URL: ${{ secrets.MBITE_RPC_URL }}
+          MBITE_RPC_USER: ${{ secrets.MBITE_RPC_USER }}
+          MBITE_RPC_PASSWORD: ${{ secrets.MBITE_RPC_PASSWORD }}
+          MBITE_ZMQ_RAWTX: ${{ vars.MBITE_ZMQ_RAWTX }}
+          MBITE_ZMQ_RAWBLOCK: ${{ vars.MBITE_ZMQ_RAWBLOCK }}
+          MBITE_BECH32_HRP: ${{ vars.MBITE_BECH32_HRP }}
+          MBITE_PUBKEYHASH: ${{ vars.MBITE_PUBKEYHASH }}
+          MBITE_SCRIPTHASH: ${{ vars.MBITE_SCRIPTHASH }}
+          MBITE_WIF: ${{ vars.MBITE_WIF }}
+          MBITE_BIP32_PUBLIC: ${{ vars.MBITE_BIP32_PUBLIC }}
+          MBITE_BIP32_PRIVATE: ${{ vars.MBITE_BIP32_PRIVATE }}
 
       # Verify the deployment is reachable from OUTSIDE the host too (DNS, proxy,
       # firewall, TLS). Runs only if a public health URL is configured.

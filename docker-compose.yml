@@ -48,7 +48,11 @@ services:
       DATABASE_URL: postgresql://moonbite:moonbite@postgres:5432/moonbite?schema=public
       REDIS_URL: redis://redis:6379
       CORS_ORIGINS: http://localhost:3000
-      JWT_SECRET: dev-compose-secret-change-me
+      WEB_BASE_URL: http://localhost:3000
+      PUBLIC_BASE_URL: http://localhost:4000
+      # Local/CI-only secrets (NOT for production — satisfy env validation only).
+      JWT_SECRET: local-ci-only-jwt-secret-0123456789abcdef
+      DOWNLOAD_URL_SECRET: local-ci-only-download-secret-abcdef
       # MBITE_RPC_URL / MBITE_ZMQ_* left unset — node is optional for the demo.
     ports:
       - "4000:4000"
