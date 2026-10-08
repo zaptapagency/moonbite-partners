@@ -11,6 +11,7 @@ import { MbiteModule } from "./mbite/mbite.module";
 import { ProductsModule } from "./products/products.module";
 import { OrdersModule } from "./orders/orders.module";
 import { PaymentsModule } from "./payments/payments.module";
+import { PricingModule } from "./pricing/pricing.module";
 import { RefundsModule } from "./refunds/refunds.module";
 import { MerchantsModule } from "./merchants/merchants.module";
 import { DeliveryModule } from "./delivery/delivery.module";
@@ -59,6 +60,7 @@ import { ReadinessController } from "./health/readiness.controller";
     ProductsModule,
     MailModule,
     DeliveryModule,
+    PricingModule,
     PaymentsModule,
     RefundsModule,
     OrdersModule,
