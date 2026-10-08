@@ -43,6 +43,10 @@ export class PaymentsService {
     productId: string;
     buyerReturnAddress?: string;
     buyerRef?: string;
+    /** "Pay what you want" chosen amount (smallest MBITE unit). */
+    chosenAmountMbite?: bigint;
+    /** Discount / coupon code to apply. */
+    discountCode?: string;
   }): Promise<Order> {
     const product = await this.prisma.product.findUnique({
       where: { id: input.productId },
@@ -56,24 +60,22 @@ export class PaymentsService {
     const index = await this.merchants.reserveKeyIndex(product.merchantId);
     const payToAddress = this.hd.deriveAddress(product.merchant.settlementXpub, index);
 
-    // Lock the MBITE amount at quote time. For USD-priced products we convert
-    // via the price oracle; the resolved rate is frozen into amountMbite so the
-    // quote cannot drift even if the oracle moves before the buyer pays.
-    let amount: bigint;
-    if (product.priceCurrency === "USD") {
-      if (product.displayUsd == null) {
-        throw new BadRequestException("USD-priced product is missing its USD price (displayUsd)");
-      }
-      const usd = Number(product.displayUsd);
-      const mbitePerUsd = await this.oracle.getMbitePerUsd();
-      amount = this.oracle.usdToMbiteUnits(usd);
-      this.log.log(
-        `Quote ${product.id}: $${usd} locked at ${mbitePerUsd} MBITE/USD → ${unitsToCoins(amount)} MBITE`,
-      );
-    } else {
-      amount = product.priceMbite;
-    }
+    // 1) Base price. PWYW: buyer names it (>= floor). USD: oracle-converted +
+    //    frozen. Else MBITE-native.
+    let amount = await this.basePrice(product, input.chosenAmountMbite);
+
+    // 2) Apply a discount code if provided (and consume a redemption).
+    const { discountMbite, appliedCode } = await this.applyDiscount(
+      product.merchantId,
+      product.id,
+      input.discountCode,
+      amount,
+    );
+    amount = amount - discountMbite;
+    if (amount <= 0n) throw new BadRequestException("Order amount must be positive after discount");
+
     const fee = feeFromBps(amount, product.merchant.feeBps);
+    const buyerId = input.buyerRef ? await this.linkBuyer(input.buyerRef) : undefined;
 
     return this.prisma.order.create({
       data: {
@@ -84,12 +86,82 @@ export class PaymentsService {
         derivationIndex: index,
         amountMbite: amount,
         feeMbite: fee,
+        discountCode: appliedCode,
+        discountMbite,
+        buyerId,
         requiredConfirmations: this.requiredConfs,
         buyerReturnAddress: input.buyerReturnAddress,
         buyerRef: input.buyerRef,
         quoteExpiresAt: new Date(Date.now() + this.quoteTtlMs),
       },
     });
+  }
+
+  /** Resolve the pre-discount price (PWYW / USD-oracle / MBITE-native). */
+  private async basePrice(
+    product: { id: string; pwyw: boolean; minPriceMbite: bigint | null; priceMbite: bigint; priceCurrency: string; displayUsd: unknown },
+    chosen?: bigint,
+  ): Promise<bigint> {
+    if (product.pwyw) {
+      const floor = product.minPriceMbite ?? product.priceMbite;
+      if (chosen == null) throw new BadRequestException("This product is pay-what-you-want — choose an amount");
+      if (chosen < floor) {
+        throw new BadRequestException(`Minimum is ${unitsToCoins(floor)} MBITE`);
+      }
+      return chosen;
+    }
+    if (product.priceCurrency === "USD") {
+      if (product.displayUsd == null) {
+        throw new BadRequestException("USD-priced product is missing its USD price (displayUsd)");
+      }
+      const usd = Number(product.displayUsd);
+      const mbitePerUsd = await this.oracle.getMbitePerUsd();
+      const amount = this.oracle.usdToMbiteUnits(usd);
+      this.log.log(`Quote ${product.id}: $${usd} @ ${mbitePerUsd} MBITE/USD → ${unitsToCoins(amount)} MBITE`);
+      return amount;
+    }
+    return product.priceMbite;
+  }
+
+  /** Validate + consume a discount code; returns the MBITE amount off. */
+  private async applyDiscount(
+    merchantId: string,
+    productId: string,
+    code: string | undefined,
+    amount: bigint,
+  ): Promise<{ discountMbite: bigint; appliedCode: string | null }> {
+    if (!code) return { discountMbite: 0n, appliedCode: null };
+    const d = await this.prisma.discount.findUnique({
+      where: { merchantId_code: { merchantId, code } },
+    });
+    if (!d || !d.active) throw new BadRequestException("Invalid discount code");
+    if (d.productId && d.productId !== productId) throw new BadRequestException("Code not valid for this product");
+    if (d.expiresAt && d.expiresAt < new Date()) throw new BadRequestException("Discount code expired");
+    if (d.maxRedemptions != null && d.redeemedCount >= d.maxRedemptions) {
+      throw new BadRequestException("Discount code fully redeemed");
+    }
+    let off = 0n;
+    if (d.percentOff != null) off = (amount * BigInt(d.percentOff)) / 100n;
+    else if (d.amountOffMbite != null) off = d.amountOffMbite;
+    if (off > amount) off = amount;
+    // Consume one redemption (best-effort; race-tolerant for a scaffold).
+    await this.prisma.discount.update({
+      where: { id: d.id },
+      data: { redeemedCount: { increment: 1 } },
+    });
+    return { discountMbite: off, appliedCode: code };
+  }
+
+  /** Upsert a Buyer by email so the purchase appears in their library. */
+  private async linkBuyer(buyerRef: string): Promise<string | undefined> {
+    const email = buyerRef.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return undefined; // not an email → skip
+    const buyer = await this.prisma.buyer.upsert({
+      where: { email },
+      update: {},
+      create: { email },
+    });
+    return buyer.id;
   }
 
   async getInvoiceView(orderId: string): Promise<InvoiceView> {

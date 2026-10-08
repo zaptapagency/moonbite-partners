@@ -110,6 +110,9 @@ export class ProductsService {
     priceCurrency?: string;
     priceUsd?: number;
     category?: string;
+    imageUrl?: string;
+    pwyw?: boolean;
+    minPriceMbite?: bigint;
     deliveryMethod: DeliveryMethod;
     deliveryConfig?: unknown;
   }) {
@@ -122,6 +125,9 @@ export class ProductsService {
         priceCurrency: input.priceCurrency ?? "MBITE",
         displayUsd: input.priceUsd ?? undefined,
         category: input.category,
+        imageUrl: input.imageUrl,
+        pwyw: input.pwyw ?? false,
+        minPriceMbite: input.minPriceMbite,
         deliveryMethod: input.deliveryMethod,
         deliveryConfig: (input.deliveryConfig as object) ?? undefined,
       },

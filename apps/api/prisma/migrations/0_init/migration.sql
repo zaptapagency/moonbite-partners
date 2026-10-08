@@ -18,6 +18,9 @@ CREATE TABLE "Merchant" (
     "id" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "displayName" TEXT NOT NULL,
+    "handle" TEXT,
+    "bio" TEXT,
+    "avatarUrl" TEXT,
     "passwordHash" TEXT,
     "emailVerified" BOOLEAN NOT NULL DEFAULT false,
     "emailVerifyToken" TEXT,
@@ -43,6 +46,9 @@ CREATE TABLE "Product" (
     "displayUsd" DECIMAL(18,2),
     "priceCurrency" TEXT NOT NULL DEFAULT 'MBITE',
     "category" TEXT,
+    "imageUrl" TEXT,
+    "pwyw" BOOLEAN NOT NULL DEFAULT false,
+    "minPriceMbite" BIGINT,
     "deliveryMethod" "DeliveryMethod" NOT NULL,
     "deliveryConfig" JSONB,
     "active" BOOLEAN NOT NULL DEFAULT true,
@@ -90,6 +96,9 @@ CREATE TABLE "Order" (
     "feeMbite" BIGINT NOT NULL DEFAULT 0,
     "buyerReturnAddress" TEXT,
     "buyerRef" TEXT,
+    "buyerId" TEXT,
+    "discountCode" TEXT,
+    "discountMbite" BIGINT NOT NULL DEFAULT 0,
     "txid" TEXT,
     "quoteExpiresAt" TIMESTAMP(3) NOT NULL,
     "paidAt" TIMESTAMP(3),
@@ -98,6 +107,33 @@ CREATE TABLE "Order" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Buyer" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Buyer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Discount" (
+    "id" TEXT NOT NULL,
+    "merchantId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "percentOff" INTEGER,
+    "amountOffMbite" BIGINT,
+    "productId" TEXT,
+    "maxRedemptions" INTEGER,
+    "redeemedCount" INTEGER NOT NULL DEFAULT 0,
+    "expiresAt" TIMESTAMP(3),
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Discount_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -134,6 +170,9 @@ CREATE TABLE "Refund" (
 CREATE UNIQUE INDEX "Merchant_email_key" ON "Merchant"("email");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Merchant_handle_key" ON "Merchant"("handle");
+
+-- CreateIndex
 CREATE INDEX "Product_merchantId_idx" ON "Product"("merchantId");
 
 -- CreateIndex
@@ -164,6 +203,18 @@ CREATE INDEX "Order_merchantId_idx" ON "Order"("merchantId");
 CREATE INDEX "Order_payToAddress_idx" ON "Order"("payToAddress");
 
 -- CreateIndex
+CREATE INDEX "Order_buyerId_idx" ON "Order"("buyerId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Buyer_email_key" ON "Buyer"("email");
+
+-- CreateIndex
+CREATE INDEX "Discount_merchantId_idx" ON "Discount"("merchantId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Discount_merchantId_code_key" ON "Discount"("merchantId", "code");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Entitlement_orderId_key" ON "Entitlement"("orderId");
 
 -- CreateIndex
@@ -186,6 +237,15 @@ ALTER TABLE "Order" ADD CONSTRAINT "Order_merchantId_fkey" FOREIGN KEY ("merchan
 
 -- AddForeignKey
 ALTER TABLE "Order" ADD CONSTRAINT "Order_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Order" ADD CONSTRAINT "Order_buyerId_fkey" FOREIGN KEY ("buyerId") REFERENCES "Buyer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Discount" ADD CONSTRAINT "Discount_merchantId_fkey" FOREIGN KEY ("merchantId") REFERENCES "Merchant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Discount" ADD CONSTRAINT "Discount_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Entitlement" ADD CONSTRAINT "Entitlement_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

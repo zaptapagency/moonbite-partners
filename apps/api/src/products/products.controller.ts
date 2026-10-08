@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from "@nest
 import {
   ArrayNotEmpty,
   IsArray,
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -26,6 +27,10 @@ class CreateProductDto {
   /** USD price (required when priceCurrency = USD). */
   @IsOptional() @IsNumber() @Min(0.01) priceUsd?: number;
   @IsOptional() @IsString() category?: string;
+  @IsOptional() @IsString() imageUrl?: string;
+  /** Pay-what-you-want: buyer names a price at/above minPriceUnits. */
+  @IsOptional() @IsBoolean() pwyw?: boolean;
+  @IsOptional() @IsInt() @Min(1) minPriceUnits?: number;
   @IsEnum(DeliveryMethod) deliveryMethod!: DeliveryMethod;
   @IsOptional() deliveryConfig?: unknown;
 }
@@ -73,6 +78,9 @@ export class ProductsController {
       priceCurrency: dto.priceCurrency,
       priceUsd: dto.priceUsd,
       category: dto.category,
+      imageUrl: dto.imageUrl,
+      pwyw: dto.pwyw,
+      minPriceMbite: dto.minPriceUnits != null ? BigInt(dto.minPriceUnits) : undefined,
       deliveryMethod: dto.deliveryMethod,
       deliveryConfig: dto.deliveryConfig,
     });

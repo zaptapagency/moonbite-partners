@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Param, Post } from "@nestjs/common";
-import { IsOptional, IsString } from "class-validator";
+import { IsInt, IsOptional, IsString, Min } from "class-validator";
 import { ConfigService } from "@nestjs/config";
 import type { CreateOrderResult, InvoiceView } from "@moonbite/shared";
 import { PaymentsService } from "../payments/payments.service";
@@ -10,6 +10,10 @@ class CreateOrderDto {
   @IsOptional() @IsString() buyerReturnAddress?: string;
   /** Email or account id for delivery. */
   @IsOptional() @IsString() buyerRef?: string;
+  /** "Pay what you want" chosen amount, smallest MBITE unit. */
+  @IsOptional() @IsInt() @Min(1) chosenAmountUnits?: number;
+  /** Discount / coupon code. */
+  @IsOptional() @IsString() discountCode?: string;
 }
 
 @Controller("orders")
@@ -25,7 +29,13 @@ export class OrdersController {
 
   @Post()
   async create(@Body() dto: CreateOrderDto): Promise<CreateOrderResult> {
-    const order = await this.payments.createInvoice(dto);
+    const order = await this.payments.createInvoice({
+      productId: dto.productId,
+      buyerReturnAddress: dto.buyerReturnAddress,
+      buyerRef: dto.buyerRef,
+      chosenAmountMbite: dto.chosenAmountUnits != null ? BigInt(dto.chosenAmountUnits) : undefined,
+      discountCode: dto.discountCode,
+    });
     return { orderId: order.id, checkoutUrl: `/checkout/${order.id}` };
   }
 

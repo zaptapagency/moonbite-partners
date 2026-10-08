@@ -41,6 +41,11 @@ model Merchant {
   id            String       @id @default(cuid())
   email         String       @unique
   displayName   String
+  /// Public storefront handle (/@handle). Unique, lowercase slug.
+  handle        String?      @unique
+  /// Storefront profile.
+  bio           String?
+  avatarUrl     String?
   /// bcrypt hash; null for seeded/demo merchants that have not set a password.
   passwordHash  String?
   /// Email verification + password reset (tokens are sha256 hashes, not raw).
@@ -58,6 +63,7 @@ model Merchant {
   createdAt     DateTime     @default(now())
   products      Product[]
   orders        Order[]
+  discounts     Discount[]
 }
 
 model Product {
@@ -74,6 +80,12 @@ model Product {
   priceCurrency  String         @default("MBITE")
   /// Free-text category slug for browse/filter (Phase 2 discovery).
   category       String?
+  /// Cover image URL (storefront / product page).
+  imageUrl       String?
+  /// "Pay what you want": buyer names a price at/above minPriceMbite.
+  pwyw           Boolean        @default(false)
+  /// Minimum acceptable price for PWYW products, smallest MBITE unit.
+  minPriceMbite  BigInt?
   deliveryMethod DeliveryMethod
   /// Method-specific config: webhook URL, storage object key, course id, etc.
   deliveryConfig Json?
@@ -82,6 +94,7 @@ model Product {
   orders         Order[]
   licenseKeys    LicenseKey[]
   reviews        Review[]
+  discounts      Discount[]
 
   @@index([merchantId])
   @@index([active])
@@ -139,6 +152,12 @@ model Order {
   buyerReturnAddress    String?
   /// Buyer contact for delivery (email or account id).
   buyerRef              String?
+  /// Linked buyer account (by email) for the purchase library.
+  buyer                 Buyer?      @relation(fields: [buyerId], references: [id])
+  buyerId               String?
+  /// Discount applied at checkout, if any.
+  discountCode          String?
+  discountMbite         BigInt      @default(0)
 
   txid                  String?
   quoteExpiresAt        DateTime
@@ -153,6 +172,40 @@ model Order {
   @@index([status])
   @@index([merchantId])
   @@index([payToAddress])
+  @@index([buyerId])
+}
+
+/// A buyer account — the purchase "Library". Linked to orders by email.
+model Buyer {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  /// null for guest buyers (checkout by email); set when they register.
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  orders       Order[]
+}
+
+/// A merchant discount / coupon code. percentOff XOR amountOffMbite.
+model Discount {
+  id             String    @id @default(cuid())
+  merchant       Merchant  @relation(fields: [merchantId], references: [id])
+  merchantId     String
+  code           String
+  /// Percent off (1..100), when set. Otherwise a fixed amount off.
+  percentOff     Int?
+  /// Fixed amount off, smallest MBITE unit, when set.
+  amountOffMbite BigInt?
+  /// Scope to one product, or null for all of the merchant's products.
+  product        Product?  @relation(fields: [productId], references: [id])
+  productId      String?
+  maxRedemptions Int?
+  redeemedCount  Int       @default(0)
+  expiresAt      DateTime?
+  active         Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  @@unique([merchantId, code])
+  @@index([merchantId])
 }
 
 /// What the buyer actually receives once PAID → FULFILLED.
