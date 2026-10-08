@@ -31,9 +31,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <a href="/" style={{ color: "inherit", textDecoration: "none" }}>
             🌙 MoonBite Partners
           </a>
-          <a href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none", fontWeight: 500 }}>
-            Merchant dashboard →
-          </a>
+          <nav style={{ display: "flex", gap: 20, fontWeight: 500 }}>
+            <a href="/library" style={{ color: "#9aa4b2", textDecoration: "none" }}>
+              My Library
+            </a>
+            <a href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none" }}>
+              Merchant dashboard →
+            </a>
+          </nav>
         </header>
         <main style={{ maxWidth: 960, margin: "0 auto", padding: 24, width: "100%", boxSizing: "border-box", flex: 1 }}>
           {children}

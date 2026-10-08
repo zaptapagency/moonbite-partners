@@ -119,6 +119,14 @@ export default function DashboardPage() {
         {profile.displayName} · {profile.email} · tier <strong>{profile.tier}</strong> · fee{" "}
         {(profile.feeBps / 100).toFixed(2)}%
       </p>
+      <nav style={{ display: "flex", gap: 16, margin: "8px 0 4px" }}>
+        <a href="/dashboard/profile" style={{ color: "#8ab4ff", textDecoration: "none" }}>
+          Storefront profile →
+        </a>
+        <a href="/dashboard/discounts" style={{ color: "#8ab4ff", textDecoration: "none" }}>
+          Discount codes →
+        </a>
+      </nav>
       {err && <p style={{ color: "#ff6b6b" }}>{err}</p>}
 
       <Overview profile={profile} onChange={load} setErr={setErr} />
