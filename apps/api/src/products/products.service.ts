@@ -30,6 +30,9 @@ export class ProductsService {
     title: string;
     description?: string;
     priceMbite: bigint;
+    priceCurrency?: string;
+    priceUsd?: number;
+    category?: string;
     deliveryMethod: DeliveryMethod;
     deliveryConfig?: unknown;
   }) {
@@ -39,6 +42,9 @@ export class ProductsService {
         title: input.title,
         description: input.description,
         priceMbite: input.priceMbite,
+        priceCurrency: input.priceCurrency ?? "MBITE",
+        displayUsd: input.priceUsd ?? undefined,
+        category: input.category,
         deliveryMethod: input.deliveryMethod,
         deliveryConfig: (input.deliveryConfig as object) ?? undefined,
       },
