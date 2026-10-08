@@ -35,6 +35,12 @@ export interface InvoiceView {
   requiredConfirmations: number;
   /** Unix ms when the quote (and address reuse guarantee) expires. */
   expiresAt: number;
+  /** Pricing currency the merchant set: "MBITE" native, or "USD" converted at quote time. */
+  priceCurrency?: "MBITE" | "USD";
+  /** The USD price the merchant set, present only when priceCurrency === "USD". */
+  displayUsd?: number;
+  /** MBITE-per-USD rate locked at quote time, present only when priceCurrency === "USD". */
+  mbitePerUsd?: number;
 }
 
 /** Response of POST /orders — the thing the buyer is redirected to pay. */

@@ -5,6 +5,7 @@ import { RefundsModule } from "../refunds/refunds.module";
 import { ReconcileQueueModule } from "../queue/reconcile-queue.module";
 import { DeliveryModule } from "../delivery/delivery.module";
 import { MailModule } from "../mail/mail.module";
+import { PricingModule } from "../pricing/pricing.module";
 import { PaymentsService } from "./payments.service";
 import { DeliveryService } from "./delivery.service";
 import { ConfirmationService } from "./confirmation.service";
@@ -18,6 +19,7 @@ import { ZmqListenerService } from "./zmq-listener.service";
     ReconcileQueueModule,
     DeliveryModule,
     MailModule,
+    PricingModule,
   ],
   providers: [PaymentsService, DeliveryService, ConfirmationService, ZmqListenerService],
   exports: [PaymentsService],

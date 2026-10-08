@@ -10,6 +10,7 @@ import { StorageService } from "../delivery/storage.service";
 import { DeliveryService } from "./delivery.service";
 import { decideNextStatus } from "./order-state-machine";
 import { coinsToUnits, feeFromBps, unitsToCoins } from "../common/money";
+import { PriceOracleService } from "../pricing/price-oracle.service";
 
 /**
  * Invoice lifecycle — the heart of the platform (PLAN.md §4).
@@ -29,6 +30,7 @@ export class PaymentsService {
     private readonly merchants: MerchantsService,
     private readonly delivery: DeliveryService,
     private readonly storage: StorageService,
+    private readonly oracle: PriceOracleService,
     config: ConfigService,
   ) {
     this.requiredConfs = Number(config.get("PAYMENT_CONFIRMATIONS") ?? 2);
@@ -53,7 +55,24 @@ export class PaymentsService {
 
     const index = await this.merchants.reserveKeyIndex(product.merchantId);
     const payToAddress = this.hd.deriveAddress(product.merchant.settlementXpub, index);
-    const amount = product.priceMbite;
+
+    // Lock the MBITE amount at quote time. For USD-priced products we convert
+    // via the price oracle; the resolved rate is frozen into amountMbite so the
+    // quote cannot drift even if the oracle moves before the buyer pays.
+    let amount: bigint;
+    if (product.priceCurrency === "USD") {
+      if (product.displayUsd == null) {
+        throw new BadRequestException("USD-priced product is missing its USD price (displayUsd)");
+      }
+      const usd = Number(product.displayUsd);
+      const mbitePerUsd = await this.oracle.getMbitePerUsd();
+      amount = this.oracle.usdToMbiteUnits(usd);
+      this.log.log(
+        `Quote ${product.id}: $${usd} locked at ${mbitePerUsd} MBITE/USD → ${unitsToCoins(amount)} MBITE`,
+      );
+    } else {
+      amount = product.priceMbite;
+    }
     const fee = feeFromBps(amount, product.merchant.feeBps);
 
     return this.prisma.order.create({
@@ -74,18 +93,35 @@ export class PaymentsService {
   }
 
   async getInvoiceView(orderId: string): Promise<InvoiceView> {
-    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { product: true },
+    });
     if (!order) throw new NotFoundException("Order not found");
-    return {
+
+    const amountCoins = unitsToCoins(order.amountMbite);
+    const view: InvoiceView = {
       orderId: order.id,
       status: order.status,
       payToAddress: order.payToAddress,
-      amountMbite: unitsToCoins(order.amountMbite),
-      displayPrice: `${unitsToCoins(order.amountMbite)} MBITE`,
+      amountMbite: amountCoins,
+      displayPrice: `${amountCoins} MBITE`,
       confirmations: order.confirmations,
       requiredConfirmations: order.requiredConfirmations,
       expiresAt: order.quoteExpiresAt.getTime(),
     };
+
+    if (order.product.priceCurrency === "USD" && order.product.displayUsd != null) {
+      const usd = Number(order.product.displayUsd);
+      view.priceCurrency = "USD";
+      view.displayUsd = usd;
+      // The rate locked at quote time, recovered from the frozen MBITE amount.
+      view.mbitePerUsd = usd > 0 ? Number(amountCoins) / usd : 0;
+      view.displayPrice = `$${usd.toFixed(2)} (${amountCoins} MBITE)`;
+    } else {
+      view.priceCurrency = "MBITE";
+    }
+    return view;
   }
 
   /**
