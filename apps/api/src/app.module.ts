@@ -18,6 +18,7 @@ import { PaymentsModule } from "./payments/payments.module";
 import { PricingModule } from "./pricing/pricing.module";
 import { RefundsModule } from "./refunds/refunds.module";
 import { MerchantsModule } from "./merchants/merchants.module";
+import { DiscountsModule } from "./discounts/discounts.module";
 import { DeliveryModule } from "./delivery/delivery.module";
 import { MailModule } from "./mail/mail.module";
 import { HealthController } from "./health/health.controller";
@@ -67,6 +68,7 @@ import { ReadinessController } from "./health/readiness.controller";
     AuthModule,
     MbiteModule,
     MerchantsModule,
+    DiscountsModule,
     ProductsModule,
     ReviewsModule,
     MailModule,

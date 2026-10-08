@@ -66,6 +66,8 @@ export default function ProductPage({
   const [usdPerMbite, setUsdPerMbite] = useState<number | null>(null);
 
   const [email, setEmail] = useState("");
+  const [pwywAmount, setPwywAmount] = useState("");
+  const [discountCode, setDiscountCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -87,11 +89,32 @@ export default function ProductPage({
     getUsdPerMbite().then(setUsdPerMbite);
   }, [id]);
 
+  // PWYW floor in whole MBITE (minPriceMbite, else the product's priceMbite).
+  const pwywFloorCoins = product?.pwyw
+    ? Number(BigInt(product.minPriceMbite ?? product.priceMbite)) / 1e8
+    : 0;
+
   async function buy() {
     setBusy(true);
     setErr(null);
     try {
-      const { checkoutUrl } = await createOrder(id, email || undefined);
+      let chosenAmountUnits: number | undefined;
+      if (product?.pwyw) {
+        const coins = parseFloat(pwywAmount);
+        if (!Number.isFinite(coins) || coins <= 0) {
+          throw new Error("Name your price to continue");
+        }
+        if (coins < pwywFloorCoins) {
+          throw new Error(`Minimum is ${pwywFloorCoins} MBITE`);
+        }
+        chosenAmountUnits = Math.round(coins * 1e8);
+      }
+      const { checkoutUrl } = await createOrder(
+        id,
+        email || undefined,
+        chosenAmountUnits,
+        discountCode || undefined,
+      );
       router.push(checkoutUrl);
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Something went wrong");
@@ -154,9 +177,14 @@ export default function ProductPage({
       {product?.description && (
         <p style={{ color: "#9aa4b2" }}>{product.description}</p>
       )}
-      {product && (
+      {product && !product.pwyw && (
         <p>
           <strong>{formatProductPrice(product, usdPerMbite)}</strong>
+        </p>
+      )}
+      {product?.pwyw && (
+        <p style={{ color: "#8ab4ff", fontWeight: 600 }}>
+          Pay what you want · minimum {pwywFloorCoins} MBITE
         </p>
       )}
 
@@ -175,6 +203,35 @@ export default function ProductPage({
           placeholder="you@example.com"
           style={fieldStyle}
         />
+
+        {product?.pwyw && (
+          <>
+            <label style={{ display: "block", margin: "16px 0 6px" }}>
+              Name your price (MBITE)
+            </label>
+            <input
+              value={pwywAmount}
+              onChange={(e) => setPwywAmount(e.target.value)}
+              placeholder={`${pwywFloorCoins} or more`}
+              inputMode="decimal"
+              style={fieldStyle}
+            />
+            <p style={{ color: "#7c8699", fontSize: 12, margin: "6px 0 0" }}>
+              Minimum {pwywFloorCoins} MBITE.
+            </p>
+          </>
+        )}
+
+        <label style={{ display: "block", margin: "16px 0 6px" }}>
+          Discount code (optional)
+        </label>
+        <input
+          value={discountCode}
+          onChange={(e) => setDiscountCode(e.target.value)}
+          placeholder="SAVE10"
+          style={fieldStyle}
+        />
+
         {err && <p style={{ color: "#ff6b6b" }}>{err}</p>}
         <button
           onClick={buy}

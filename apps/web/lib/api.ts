@@ -16,6 +16,10 @@ export interface ProductSummary {
   priceMbite: string; // BigInt serialized as string by the API
   priceCurrency?: string;
   displayUsd?: string | null; // USD price when priceCurrency === "USD"
+  /** Pay-what-you-want: buyer names a price at/above minPriceMbite. */
+  pwyw?: boolean;
+  /** Minimum acceptable PWYW price, smallest MBITE unit (BigInt as string). */
+  minPriceMbite?: string | null;
   merchant: { displayName: string };
   rating: RatingAggregate;
 }
@@ -135,13 +139,28 @@ export async function createReview(
 export async function createOrder(
   productId: string,
   buyerRef?: string,
+  /** PWYW chosen amount in smallest MBITE units (1 MBITE = 1e8). */
+  chosenAmountUnits?: number,
+  /** Optional discount / coupon code. */
+  discountCode?: string,
 ): Promise<CreateOrderResult> {
   const res = await fetch(`${BASE}/orders`, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ productId, buyerRef }),
+    body: JSON.stringify({
+      productId,
+      buyerRef,
+      chosenAmountUnits,
+      discountCode: discountCode?.trim() || undefined,
+    }),
   });
-  if (!res.ok) throw new Error("Failed to create order");
+  if (!res.ok) {
+    const message = await res
+      .json()
+      .then((b) => (Array.isArray(b?.message) ? b.message.join(", ") : b?.message))
+      .catch(() => null);
+    throw new Error(message || "Failed to create order");
+  }
   return res.json();
 }
 
