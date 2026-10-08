@@ -13,6 +13,7 @@ export interface ProductSummary {
   title: string;
   description: string | null;
   category: string | null;
+  imageUrl: string | null; // cover image URL (null when none set)
   priceMbite: string; // BigInt serialized as string by the API
   priceCurrency?: string;
   displayUsd?: string | null; // USD price when priceCurrency === "USD"

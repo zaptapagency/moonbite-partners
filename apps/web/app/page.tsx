@@ -152,6 +152,22 @@ export default function CatalogPage() {
               background: "#111622",
             }}
           >
+            {p.imageUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={p.imageUrl}
+                alt={p.title}
+                style={{
+                  width: "100%",
+                  height: 120,
+                  objectFit: "cover",
+                  borderRadius: 8,
+                  marginBottom: 10,
+                  background: "#0b0e14",
+                  border: "1px solid #1c2230",
+                }}
+              />
+            )}
             <div style={{ fontSize: 12, color: "#7c8699" }}>{p.merchant.displayName}</div>
             <h3 style={{ margin: "4px 0" }}>{p.title}</h3>
             {p.category && (
