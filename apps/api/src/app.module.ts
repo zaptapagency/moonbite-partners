@@ -10,6 +10,7 @@ import { RedisThrottlerStorage } from "./throttler/redis-throttler.storage";
 import { ObservabilityModule } from "./observability/observability.module";
 import { ReconcileProcessorModule } from "./queue/reconcile-processor.module";
 import { AuthModule } from "./auth/auth.module";
+import { BuyerAuthModule } from "./buyer-auth/buyer-auth.module";
 import { MbiteModule } from "./mbite/mbite.module";
 import { ProductsModule } from "./products/products.module";
 import { ReviewsModule } from "./reviews/reviews.module";
@@ -65,6 +66,7 @@ import { ReadinessController } from "./health/readiness.controller";
     PrismaModule,
     ObservabilityModule,
     AuthModule,
+    BuyerAuthModule,
     MbiteModule,
     MerchantsModule,
     ProductsModule,
