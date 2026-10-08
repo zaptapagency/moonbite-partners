@@ -3,8 +3,11 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { APP_GUARD } from "@nestjs/core";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { BullModule } from "@nestjs/bullmq";
+import Redis from "ioredis";
 import { PrismaModule } from "./prisma/prisma.module";
 import { validateEnv } from "./config/env.validation";
+import { RedisThrottlerStorage } from "./throttler/redis-throttler.storage";
+import { ObservabilityModule } from "./observability/observability.module";
 import { ReconcileProcessorModule } from "./queue/reconcile-processor.module";
 import { AuthModule } from "./auth/auth.module";
 import { MbiteModule } from "./mbite/mbite.module";
@@ -28,14 +31,19 @@ import { ReadinessController } from "./health/readiness.controller";
     // limit is shared — see PLAN.md §3/§8.
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        throttlers: [
-          {
-            ttl: Number(config.get("THROTTLE_TTL") ?? 60_000),
-            limit: Number(config.get("THROTTLE_LIMIT") ?? 120),
-          },
-        ],
-      }),
+      useFactory: (config: ConfigService) => {
+        const redisUrl = config.get<string>("REDIS_URL");
+        return {
+          throttlers: [
+            {
+              ttl: Number(config.get("THROTTLE_TTL") ?? 60_000),
+              limit: Number(config.get("THROTTLE_LIMIT") ?? 120),
+            },
+          ],
+          // Shared across instances when Redis is available; else in-memory.
+          storage: redisUrl ? new RedisThrottlerStorage(new Redis(redisUrl)) : undefined,
+        };
+      },
     }),
     // Shared Redis connection for all BullMQ queues/workers.
     BullModule.forRootAsync({
@@ -53,6 +61,7 @@ import { ReadinessController } from "./health/readiness.controller";
       },
     }),
     PrismaModule,
+    ObservabilityModule,
     AuthModule,
     MbiteModule,
     MerchantsModule,
