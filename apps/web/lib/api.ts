@@ -15,8 +15,31 @@ export interface ProductSummary {
   category: string | null;
   priceMbite: string; // BigInt serialized as string by the API
   priceCurrency?: string;
+  displayUsd?: string | null; // USD price when priceCurrency === "USD"
   merchant: { displayName: string };
   rating: RatingAggregate;
+}
+
+/** Display a product's price: USD when priced in USD, else MBITE. */
+export function formatProductPrice(p: {
+  priceMbite: string;
+  priceCurrency?: string;
+  displayUsd?: string | null;
+}): string {
+  if (p.priceCurrency === "USD" && p.displayUsd != null) {
+    return `$${Number(p.displayUsd).toFixed(2)}`;
+  }
+  const u = (() => {
+    try {
+      const n = BigInt(p.priceMbite);
+      const whole = n / 100_000_000n;
+      const frac = (n % 100_000_000n).toString().padStart(8, "0").replace(/0+$/, "");
+      return frac ? `${whole}.${frac}` : `${whole}`;
+    } catch {
+      return p.priceMbite;
+    }
+  })();
+  return `${u} MBITE`;
 }
 
 /** Optional catalog filters (Phase 2 discovery). */

@@ -5,6 +5,7 @@ import { use, useEffect, useState } from "react";
 import {
   createOrder,
   createReview,
+  formatProductPrice,
   getProduct,
   listReviews,
   type ProductSummary,
@@ -152,7 +153,7 @@ export default function ProductPage({
       )}
       {product && (
         <p>
-          <strong>{fmtMbite(product.priceMbite)} MBITE</strong>
+          <strong>{formatProductPrice(product)}</strong>
         </p>
       )}
 

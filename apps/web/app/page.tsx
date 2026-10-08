@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  formatProductPrice,
   listCategories,
   listProducts,
   type ProductSummary,
@@ -169,7 +170,7 @@ export default function CatalogPage() {
             <div style={{ marginBottom: 6 }}>
               <Stars rating={p.rating} />
             </div>
-            <strong>{fmtMbite(p.priceMbite)} MBITE</strong>
+            <strong>{formatProductPrice(p)}</strong>
             <div style={{ marginTop: 12 }}>
               <Link
                 href={`/product/${p.id}`}
