@@ -1,6 +1,13 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { PrismaService } from "../prisma/prisma.service";
 import { HdAddressService } from "../mbite/hd-address.service";
+import { isValidHandle } from "./handle";
 
 @Injectable()
 export class MerchantsService {
@@ -21,6 +28,9 @@ export class MerchantsService {
         id: true,
         email: true,
         displayName: true,
+        handle: true,
+        bio: true,
+        avatarUrl: true,
         tier: true,
         feeBps: true,
         settlementXpub: true,
@@ -29,6 +39,48 @@ export class MerchantsService {
     });
     if (!m) throw new NotFoundException("Merchant not found");
     return { ...m, xpubConfigured: Boolean(m.settlementXpub), settlementXpub: undefined };
+  }
+
+  /**
+   * Update the merchant's public storefront profile. `handle` is validated
+   * (lowercase slug, 3..30 chars) and must be unique across merchants —
+   * a clash raises 409. Only provided fields are changed.
+   */
+  async updateProfile(
+    merchantId: string,
+    input: { handle?: string; bio?: string | null; avatarUrl?: string | null },
+  ) {
+    const data: Prisma.MerchantUpdateInput = {};
+
+    if (input.handle !== undefined) {
+      const handle = input.handle.trim().toLowerCase();
+      if (!isValidHandle(handle)) {
+        throw new BadRequestException(
+          "Handle must be 3–30 characters: lowercase letters, numbers and hyphens only",
+        );
+      }
+      const existing = await this.prisma.merchant.findUnique({
+        where: { handle },
+        select: { id: true },
+      });
+      if (existing && existing.id !== merchantId) {
+        throw new ConflictException("That handle is already taken");
+      }
+      data.handle = handle;
+    }
+    if (input.bio !== undefined) data.bio = input.bio;
+    if (input.avatarUrl !== undefined) data.avatarUrl = input.avatarUrl;
+
+    try {
+      await this.prisma.merchant.update({ where: { id: merchantId }, data });
+    } catch (e) {
+      // Unique-constraint race: another merchant grabbed the handle concurrently.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") {
+        throw new ConflictException("That handle is already taken");
+      }
+      throw e;
+    }
+    return this.profile(merchantId);
   }
 
   myProducts(merchantId: string) {
