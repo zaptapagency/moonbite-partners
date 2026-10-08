@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Put, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Put, Query, UseGuards } from "@nestjs/common";
 import {
   ArrayNotEmpty,
   IsArray,
@@ -44,9 +44,16 @@ class SetDeliveryDto {
 export class ProductsController {
   constructor(private readonly products: ProductsService) {}
 
+  /** Public catalog. Optional `?q=<text>&category=<slug>` filters (Phase 2). */
   @Get()
-  list() {
-    return this.products.list();
+  list(@Query("q") q?: string, @Query("category") category?: string) {
+    return this.products.list({ q, category });
+  }
+
+  /** Distinct non-null categories of active products (declared before :id). */
+  @Get("categories")
+  categories() {
+    return this.products.categories();
   }
 
   @Get(":id")

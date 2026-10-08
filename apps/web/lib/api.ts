@@ -2,17 +2,90 @@ import type { CreateOrderResult, InvoiceView } from "@moonbite/shared";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:4000";
 
+/** Aggregate buyer rating the API attaches to every product row (Phase 2). */
+export interface RatingAggregate {
+  count: number;
+  average: number | null;
+}
+
 export interface ProductSummary {
   id: string;
   title: string;
   description: string | null;
+  category: string | null;
   priceMbite: string; // BigInt serialized as string by the API
+  priceCurrency?: string;
   merchant: { displayName: string };
+  rating: RatingAggregate;
 }
 
-export async function listProducts(): Promise<ProductSummary[]> {
-  const res = await fetch(`${BASE}/products`, { cache: "no-store" });
+/** Optional catalog filters (Phase 2 discovery). */
+export interface ProductQuery {
+  q?: string;
+  category?: string;
+}
+
+export async function listProducts(
+  query: ProductQuery = {},
+): Promise<ProductSummary[]> {
+  const params = new URLSearchParams();
+  if (query.q?.trim()) params.set("q", query.q.trim());
+  if (query.category?.trim()) params.set("category", query.category.trim());
+  const qs = params.toString();
+  const res = await fetch(`${BASE}/products${qs ? `?${qs}` : ""}`, {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Failed to load products");
+  return res.json();
+}
+
+export async function listCategories(): Promise<string[]> {
+  const res = await fetch(`${BASE}/products/categories`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load categories");
+  return res.json();
+}
+
+export async function getProduct(id: string): Promise<ProductSummary> {
+  const res = await fetch(`${BASE}/products/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to load product");
+  return res.json();
+}
+
+/** A buyer review as returned by the API (newest first). */
+export interface Review {
+  id: string;
+  productId: string;
+  orderId: string;
+  rating: number;
+  comment: string | null;
+  buyerRef: string | null;
+  createdAt: string;
+}
+
+export async function listReviews(productId: string): Promise<Review[]> {
+  const res = await fetch(`${BASE}/products/${productId}/reviews`, {
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error("Failed to load reviews");
+  return res.json();
+}
+
+export async function createReview(
+  productId: string,
+  input: { orderId: string; rating: number; comment?: string },
+): Promise<Review> {
+  const res = await fetch(`${BASE}/products/${productId}/reviews`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const message = await res
+      .json()
+      .then((b) => (Array.isArray(b?.message) ? b.message.join(", ") : b?.message))
+      .catch(() => null);
+    throw new Error(message || "Failed to submit review");
+  }
   return res.json();
 }
 

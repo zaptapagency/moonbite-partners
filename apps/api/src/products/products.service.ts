@@ -9,20 +9,97 @@ export interface DeliveryConfigInput {
   webhookSecret?: string;
 }
 
+/** Aggregate buyer rating attached to a product (Phase 2 discovery). */
+export interface RatingAggregate {
+  /** Number of reviews. */
+  count: number;
+  /** Mean rating (1..5) rounded to 2dp, or null when there are no reviews. */
+  average: number | null;
+}
+
+/** Optional filters for the public catalog listing (Phase 2 discovery). */
+export interface ProductListQuery {
+  /** Case-insensitive substring matched against title OR description. */
+  q?: string;
+  /** Exact category slug match. */
+  category?: string;
+}
+
 @Injectable()
 export class ProductsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  list() {
-    return this.prisma.product.findMany({
-      where: { active: true },
+  /**
+   * Public catalog listing. With no params it returns every active product
+   * (newest first), unchanged from before. Optional `q` does a case-insensitive
+   * title/description contains, and `category` filters by exact slug. Each row
+   * carries an aggregate buyer rating (count + average).
+   */
+  async list(query: ProductListQuery = {}) {
+    const where: Prisma.ProductWhereInput = { active: true };
+    const q = query.q?.trim();
+    const category = query.category?.trim();
+    if (category) where.category = category;
+    if (q) {
+      where.OR = [
+        { title: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+      ];
+    }
+    const products = await this.prisma.product.findMany({
+      where,
       orderBy: { createdAt: "desc" },
       include: { merchant: { select: { displayName: true } } },
     });
+    return this.withRatings(products);
   }
 
-  get(id: string) {
-    return this.prisma.product.findUnique({ where: { id } });
+  /** Distinct, non-null categories of active products (sorted). */
+  async categories(): Promise<string[]> {
+    const rows = await this.prisma.product.findMany({
+      where: { active: true, category: { not: null } },
+      select: { category: true },
+      distinct: ["category"],
+      orderBy: { category: "asc" },
+    });
+    return rows
+      .map((r) => r.category)
+      .filter((c): c is string => c != null && c.length > 0);
+  }
+
+  async get(id: string) {
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      include: { merchant: { select: { displayName: true } } },
+    });
+    if (!product) return null;
+    const [withRating] = await this.withRatings([product]);
+    return withRating;
+  }
+
+  /** Attach a {count, average} rating aggregate to each product row. */
+  private async withRatings<T extends { id: string }>(
+    products: T[],
+  ): Promise<(T & { rating: RatingAggregate })[]> {
+    if (products.length === 0) return [];
+    const groups = await this.prisma.review.groupBy({
+      by: ["productId"],
+      where: { productId: { in: products.map((p) => p.id) } },
+      _avg: { rating: true },
+      _count: { _all: true },
+    });
+    const byId = new Map(groups.map((g) => [g.productId, g]));
+    return products.map((p) => {
+      const g = byId.get(p.id);
+      const avg = g?._avg.rating ?? null;
+      return {
+        ...p,
+        rating: {
+          count: g?._count._all ?? 0,
+          average: avg === null ? null : Math.round(avg * 100) / 100,
+        },
+      };
+    });
   }
 
   create(input: {
