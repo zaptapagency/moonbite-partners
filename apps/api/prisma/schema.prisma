@@ -66,10 +66,14 @@ model Product {
   merchantId     String
   title          String
   description    String?
-  /// Price in the smallest MBITE unit (MBITE-native pricing, PLAN.md §4).
+  /// Price in the smallest MBITE unit (used when priceCurrency = MBITE).
   priceMbite     BigInt
-  /// Optional USD estimate shown for reference only.
+  /// USD price (authoritative when priceCurrency = USD; converted at checkout).
   displayUsd     Decimal?       @db.Decimal(18, 2)
+  /// "MBITE" (native) or "USD" (converted to MBITE at quote time via the oracle).
+  priceCurrency  String         @default("MBITE")
+  /// Free-text category slug for browse/filter (Phase 2 discovery).
+  category       String?
   deliveryMethod DeliveryMethod
   /// Method-specific config: webhook URL, storage object key, course id, etc.
   deliveryConfig Json?
@@ -77,9 +81,26 @@ model Product {
   createdAt      DateTime       @default(now())
   orders         Order[]
   licenseKeys    LicenseKey[]
+  reviews        Review[]
 
   @@index([merchantId])
   @@index([active])
+  @@index([category])
+}
+
+/// A buyer rating on a fulfilled order (one per order). Phase 2 discovery.
+model Review {
+  id        String   @id @default(cuid())
+  product   Product  @relation(fields: [productId], references: [id])
+  productId String
+  /// One review per order (the order is the proof-of-purchase capability).
+  orderId   String   @unique
+  rating    Int // 1..5
+  comment   String?
+  buyerRef  String?
+  createdAt DateTime @default(now())
+
+  @@index([productId])
 }
 
 /// Pre-uploaded pool of one-time keys for LICENSE_KEY products.

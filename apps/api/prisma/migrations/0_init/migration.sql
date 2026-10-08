@@ -41,12 +41,27 @@ CREATE TABLE "Product" (
     "description" TEXT,
     "priceMbite" BIGINT NOT NULL,
     "displayUsd" DECIMAL(18,2),
+    "priceCurrency" TEXT NOT NULL DEFAULT 'MBITE',
+    "category" TEXT,
     "deliveryMethod" "DeliveryMethod" NOT NULL,
     "deliveryConfig" JSONB,
     "active" BOOLEAN NOT NULL DEFAULT true,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Product_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Review" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "orderId" TEXT NOT NULL,
+    "rating" INTEGER NOT NULL,
+    "comment" TEXT,
+    "buyerRef" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Review_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -125,6 +140,15 @@ CREATE INDEX "Product_merchantId_idx" ON "Product"("merchantId");
 CREATE INDEX "Product_active_idx" ON "Product"("active");
 
 -- CreateIndex
+CREATE INDEX "Product_category_idx" ON "Product"("category");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Review_orderId_key" ON "Review"("orderId");
+
+-- CreateIndex
+CREATE INDEX "Review_productId_idx" ON "Review"("productId");
+
+-- CreateIndex
 CREATE INDEX "LicenseKey_productId_claimedBy_idx" ON "LicenseKey"("productId", "claimedBy");
 
 -- CreateIndex
@@ -150,6 +174,9 @@ CREATE INDEX "Refund_status_idx" ON "Refund"("status");
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_merchantId_fkey" FOREIGN KEY ("merchantId") REFERENCES "Merchant"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Review" ADD CONSTRAINT "Review_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "LicenseKey" ADD CONSTRAINT "LicenseKey_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
