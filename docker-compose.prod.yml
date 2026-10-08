@@ -68,6 +68,7 @@ services:
       MBITE_WIF: ${MBITE_WIF:-}
       MBITE_BIP32_PUBLIC: ${MBITE_BIP32_PUBLIC:-}
       MBITE_BIP32_PRIVATE: ${MBITE_BIP32_PRIVATE:-}
+      MBITE_ADDRESS_TYPE: ${MBITE_ADDRESS_TYPE:-p2wpkh}
     ports:
       - "4000:4000"
     depends_on:
