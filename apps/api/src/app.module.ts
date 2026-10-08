@@ -12,6 +12,7 @@ import { ReconcileProcessorModule } from "./queue/reconcile-processor.module";
 import { AuthModule } from "./auth/auth.module";
 import { MbiteModule } from "./mbite/mbite.module";
 import { ProductsModule } from "./products/products.module";
+import { ReviewsModule } from "./reviews/reviews.module";
 import { OrdersModule } from "./orders/orders.module";
 import { PaymentsModule } from "./payments/payments.module";
 import { PricingModule } from "./pricing/pricing.module";
@@ -67,6 +68,7 @@ import { ReadinessController } from "./health/readiness.controller";
     MbiteModule,
     MerchantsModule,
     ProductsModule,
+    ReviewsModule,
     MailModule,
     DeliveryModule,
     PricingModule,
