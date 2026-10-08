@@ -20,26 +20,46 @@ export interface ProductSummary {
   rating: RatingAggregate;
 }
 
-/** Display a product's price: USD when priced in USD, else MBITE. */
-export function formatProductPrice(p: {
-  priceMbite: string;
-  priceCurrency?: string;
-  displayUsd?: string | null;
-}): string {
-  if (p.priceCurrency === "USD" && p.displayUsd != null) {
-    return `$${Number(p.displayUsd).toFixed(2)}`;
+function mbiteCoins(priceMbite: string): number {
+  try {
+    return Number(BigInt(priceMbite)) / 1e8;
+  } catch {
+    return NaN;
   }
-  const u = (() => {
-    try {
-      const n = BigInt(p.priceMbite);
-      const whole = n / 100_000_000n;
-      const frac = (n % 100_000_000n).toString().padStart(8, "0").replace(/0+$/, "");
-      return frac ? `${whole}.${frac}` : `${whole}`;
-    } catch {
-      return p.priceMbite;
-    }
-  })();
-  return `${u} MBITE`;
+}
+
+function fmtCoins(coins: number): string {
+  // trim trailing zeros, up to 8 dp
+  return coins.toFixed(8).replace(/\.?0+$/, "");
+}
+
+/**
+ * MBITE-native price string with an optional "~$X" estimate. MBITE is always the
+ * real price; the USD figure is a display-only hint (null when no rate known).
+ */
+export function formatProductPrice(
+  p: { priceMbite: string; priceCurrency?: string; displayUsd?: string | null },
+  usdPerMbite?: number | null,
+): string {
+  const coins = mbiteCoins(p.priceMbite);
+  const mbite = Number.isNaN(coins) ? `${p.priceMbite}` : `${fmtCoins(coins)} MBITE`;
+  const est =
+    usdPerMbite && usdPerMbite > 0 && !Number.isNaN(coins)
+      ? ` (~$${(coins * usdPerMbite).toFixed(2)})`
+      : "";
+  return `${mbite}${est}`;
+}
+
+/** Fetch the display-only MBITE→USD rate (null if unavailable). */
+export async function getUsdPerMbite(): Promise<number | null> {
+  try {
+    const res = await fetch(`${BASE}/pricing/rate`, { cache: "no-store" });
+    if (!res.ok) return null;
+    const body = (await res.json()) as { usdPerMbite: number | null };
+    return body.usdPerMbite ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /** Optional catalog filters (Phase 2 discovery). */

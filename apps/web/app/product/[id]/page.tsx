@@ -7,6 +7,7 @@ import {
   createReview,
   formatProductPrice,
   getProduct,
+  getUsdPerMbite,
   listReviews,
   type ProductSummary,
   type RatingAggregate,
@@ -62,6 +63,7 @@ export default function ProductPage({
 
   const [product, setProduct] = useState<ProductSummary | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [usdPerMbite, setUsdPerMbite] = useState<number | null>(null);
 
   const [email, setEmail] = useState("");
   const [busy, setBusy] = useState(false);
@@ -82,6 +84,7 @@ export default function ProductPage({
     listReviews(id)
       .then(setReviews)
       .catch(() => setReviews([]));
+    getUsdPerMbite().then(setUsdPerMbite);
   }, [id]);
 
   async function buy() {
@@ -153,7 +156,7 @@ export default function ProductPage({
       )}
       {product && (
         <p>
-          <strong>{formatProductPrice(product)}</strong>
+          <strong>{formatProductPrice(product, usdPerMbite)}</strong>
         </p>
       )}
 
