@@ -11,6 +11,9 @@ CREATE TYPE "DeliveryMethod" AS ENUM ('LICENSE_KEY', 'SIGNED_DOWNLOAD', 'WEBHOOK
 CREATE TYPE "OrderStatus" AS ENUM ('AWAITING_PAYMENT', 'DETECTED', 'UNDERPAID', 'OVERPAID', 'PAID', 'FULFILLED', 'EXPIRED', 'REFUNDED', 'CANCELLED');
 
 -- CreateEnum
+CREATE TYPE "PaymentRoute" AS ENUM ('CRYPTO_NATIVE', 'FIAT_ONRAMP');
+
+-- CreateEnum
 CREATE TYPE "RefundStatus" AS ENUM ('REQUESTED', 'SUBMITTED', 'CONFIRMED', 'REJECTED');
 
 -- CreateTable
@@ -99,6 +102,10 @@ CREATE TABLE "Order" (
     "buyerId" TEXT,
     "discountCode" TEXT,
     "discountMbite" BIGINT NOT NULL DEFAULT 0,
+    "paymentRoute" "PaymentRoute" NOT NULL DEFAULT 'CRYPTO_NATIVE',
+    "onrampProviderRef" TEXT,
+    "fiatAmount" DECIMAL(18,2),
+    "fiatCurrency" TEXT,
     "txid" TEXT,
     "quoteExpiresAt" TIMESTAMP(3) NOT NULL,
     "paidAt" TIMESTAMP(3),
@@ -107,6 +114,22 @@ CREATE TABLE "Order" (
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Order_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Quote" (
+    "id" TEXT NOT NULL,
+    "productId" TEXT NOT NULL,
+    "mbiteAmount" BIGINT NOT NULL,
+    "fiatCurrency" TEXT NOT NULL DEFAULT 'USD',
+    "fiatAmount" DECIMAL(18,2) NOT NULL,
+    "spreadBps" INTEGER NOT NULL,
+    "mbitePerUsd" DECIMAL(24,8) NOT NULL,
+    "status" TEXT NOT NULL DEFAULT 'PENDING',
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Quote_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -194,6 +217,9 @@ CREATE INDEX "LicenseKey_productId_claimedBy_idx" ON "LicenseKey"("productId", "
 CREATE UNIQUE INDEX "Order_payToAddress_key" ON "Order"("payToAddress");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Order_onrampProviderRef_key" ON "Order"("onrampProviderRef");
+
+-- CreateIndex
 CREATE INDEX "Order_status_idx" ON "Order"("status");
 
 -- CreateIndex
@@ -204,6 +230,9 @@ CREATE INDEX "Order_payToAddress_idx" ON "Order"("payToAddress");
 
 -- CreateIndex
 CREATE INDEX "Order_buyerId_idx" ON "Order"("buyerId");
+
+-- CreateIndex
+CREATE INDEX "Quote_status_idx" ON "Quote"("status");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Buyer_email_key" ON "Buyer"("email");

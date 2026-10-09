@@ -21,6 +21,7 @@ import { RefundsModule } from "./refunds/refunds.module";
 import { MerchantsModule } from "./merchants/merchants.module";
 import { StorefrontModule } from "./storefront/storefront.module";
 import { DiscountsModule } from "./discounts/discounts.module";
+import { OnrampModule } from "./onramp/onramp.module";
 import { DeliveryModule } from "./delivery/delivery.module";
 import { MailModule } from "./mail/mail.module";
 import { HealthController } from "./health/health.controller";
@@ -73,6 +74,7 @@ import { ReadinessController } from "./health/readiness.controller";
     MerchantsModule,
     StorefrontModule,
     DiscountsModule,
+    OnrampModule,
     ProductsModule,
     ReviewsModule,
     MailModule,
