@@ -11,16 +11,16 @@ import {
   type LibraryEntitlement,
 } from "../../lib/buyer";
 
-const STATUS_COLORS: Record<string, string> = {
-  FULFILLED: "#4ade80",
-  PAID: "#8ab4ff",
-  OVERPAID: "#8ab4ff",
-  AWAITING_PAYMENT: "#f0b45e",
-  DETECTED: "#f0b45e",
-  UNDERPAID: "#f0b45e",
-  EXPIRED: "#7c8699",
-  CANCELLED: "#7c8699",
-  REFUNDED: "#c08af9",
+const STATUS_PILLS: Record<string, string> = {
+  FULFILLED: "pill-mint",
+  PAID: "pill-sky",
+  OVERPAID: "pill-sky",
+  AWAITING_PAYMENT: "pill-yellow",
+  DETECTED: "pill-yellow",
+  UNDERPAID: "pill-yellow",
+  EXPIRED: "",
+  CANCELLED: "",
+  REFUNDED: "pill-pink",
 };
 
 export default function LibraryPage() {
@@ -44,56 +44,46 @@ export default function LibraryPage() {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ margin: 0 }}>Your library</h1>
-        <button onClick={logout} style={logoutBtn}>
+    <div className="stack">
+      <div className="spread">
+        <div>
+          <h1 className="h1">Your library</h1>
+          <p className="muted" style={{ margin: "8px 0 0" }}>
+            Every product you&apos;ve purchased, newest first.
+          </p>
+        </div>
+        <button onClick={logout} className="btn btn-sm">
           Log out
         </button>
       </div>
-      <p style={{ color: "#9aa4b2" }}>Every product you&apos;ve purchased, newest first.</p>
 
-      {error && <p style={{ color: "#ff6b6b" }}>{error}</p>}
-      {!items && !error && <p style={{ color: "#9aa4b2" }}>Loading…</p>}
+      {error && <div className="banner banner-danger">{error}</div>}
+      {!items && !error && <p className="muted">Loading…</p>}
       {items && items.length === 0 && (
-        <div style={panel}>
-          <p style={{ margin: 0, color: "#9aa4b2" }}>
+        <div className="panel">
+          <p className="muted" style={{ margin: 0 }}>
             No purchases yet. When you buy a product, it will appear here.
           </p>
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="stack">
         {items?.map((item) => (
-          <div key={item.orderId} style={panel}>
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "baseline",
-                gap: 12,
-                flexWrap: "wrap",
-              }}
-            >
-              <h2 style={{ margin: 0, fontSize: 18 }}>{item.productTitle}</h2>
-              <span
-                style={{
-                  fontSize: 12,
-                  fontWeight: 700,
-                  color: STATUS_COLORS[item.status] ?? "#e6e8ec",
-                }}
-              >
+          <div key={item.orderId} className="card card-pad stack">
+            <div className="spread" style={{ alignItems: "baseline" }}>
+              <h2 className="h3">{item.productTitle}</h2>
+              <span className={`pill ${STATUS_PILLS[item.status] ?? ""}`}>
                 {item.status.replace(/_/g, " ")}
               </span>
             </div>
-            <p style={{ color: "#9aa4b2", fontSize: 14, margin: "6px 0 0" }}>
+            <p className="muted" style={{ fontSize: 14, margin: 0 }}>
               {item.deliverySummary}
             </p>
 
             {item.entitlement && <AccessDetails ent={item.entitlement} />}
 
-            <div style={{ marginTop: 12, fontSize: 13 }}>
-              <Link href={`/orders/${item.orderId}`} style={{ color: "#8ab4ff" }}>
+            <div style={{ fontSize: 13 }}>
+              <Link href={`/orders/${item.orderId}`} style={{ fontWeight: 700 }}>
                 View order →
               </Link>
             </div>
@@ -106,25 +96,27 @@ export default function LibraryPage() {
 
 function AccessDetails({ ent }: { ent: LibraryEntitlement }) {
   return (
-    <div style={{ marginTop: 12 }}>
+    <div className="stack">
       {ent.key && <CopyField label="License key" value={ent.key} />}
       {ent.downloadUrl && (
-        <a href={ent.downloadUrl} style={downloadBtn}>
-          Download your files ↓
-        </a>
+        <div>
+          <a href={ent.downloadUrl} className="btn btn-accent">
+            Download your files ↓
+          </a>
+        </div>
       )}
       {ent.access && (
-        <p style={{ fontSize: 14, margin: "8px 0 0" }}>
-          Access: <span style={{ color: "#e6e8ec" }}>{ent.access}</span>
-        </p>
+        <div className="banner banner-info" style={{ fontSize: 14 }}>
+          Access: <strong>{ent.access}</strong>
+        </div>
       )}
       {ent.courseRef && (
-        <p style={{ fontSize: 14, margin: "8px 0 0", color: "#9aa4b2" }}>
+        <p className="muted" style={{ fontSize: 14, margin: 0 }}>
           Course reference: {ent.courseRef}
         </p>
       )}
       {ent.webhook && (
-        <p style={{ fontSize: 14, margin: "8px 0 0", color: "#9aa4b2" }}>
+        <p className="muted" style={{ fontSize: 14, margin: 0 }}>
           {ent.webhook.delivered ? "Delivered to the merchant's system." : "Delivery pending."}
         </p>
       )}
@@ -135,17 +127,17 @@ function AccessDetails({ ent }: { ent: LibraryEntitlement }) {
 function CopyField({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div style={{ marginTop: 4 }}>
-      <div style={{ fontSize: 12, color: "#9aa4b2", marginBottom: 4 }}>{label}</div>
-      <div style={{ display: "flex", gap: 8 }}>
+    <div>
+      <div className="label">{label}</div>
+      <div className="row" style={{ flexWrap: "nowrap" }}>
         <code
+          className="mono"
           style={{
             flex: 1,
-            padding: "8px 10px",
-            borderRadius: 8,
-            border: "1px solid #2a3344",
-            background: "#0b0e14",
-            color: "#e6e8ec",
+            padding: "10px 12px",
+            borderRadius: "var(--radius-sm)",
+            border: "var(--border)",
+            background: "var(--cream)",
             fontSize: 13,
             overflowX: "auto",
           }}
@@ -162,7 +154,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
               () => undefined,
             );
           }}
-          style={copyBtn}
+          className="btn btn-sm"
         >
           {copied ? "Copied" : "Copy"}
         </button>
@@ -170,38 +162,3 @@ function CopyField({ label, value }: { label: string; value: string }) {
     </div>
   );
 }
-
-const panel: React.CSSProperties = {
-  background: "#111622",
-  border: "1px solid #1c2230",
-  borderRadius: 12,
-  padding: 18,
-};
-const logoutBtn: React.CSSProperties = {
-  padding: "8px 14px",
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "transparent",
-  color: "#9aa4b2",
-  cursor: "pointer",
-  fontSize: 13,
-};
-const downloadBtn: React.CSSProperties = {
-  display: "inline-block",
-  marginTop: 4,
-  padding: "10px 18px",
-  borderRadius: 8,
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  textDecoration: "none",
-};
-const copyBtn: React.CSSProperties = {
-  padding: "8px 14px",
-  borderRadius: 8,
-  border: "none",
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  cursor: "pointer",
-};

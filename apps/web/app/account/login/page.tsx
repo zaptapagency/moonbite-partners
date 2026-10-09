@@ -24,71 +24,59 @@ export default function BuyerLoginPage() {
   }
 
   return (
-    <div style={panel}>
-      <h1 style={{ marginTop: 0 }}>Log in</h1>
-      <p style={{ color: "#9aa4b2", marginTop: -6 }}>Access your purchase library.</p>
-      <label style={label}>
-        Email
+    <div className="card card-pad stack" style={{ maxWidth: 440, margin: "0 auto" }}>
+      <div>
+        <h1 className="h2">Log in</h1>
+        <p className="muted" style={{ margin: "8px 0 0" }}>
+          Access your purchase library.
+        </p>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="login-email">
+          Email
+        </label>
         <input
-          style={input}
+          id="login-email"
+          className="input"
           type="email"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-      </label>
-      <label style={label}>
-        Password
+      </div>
+
+      <div>
+        <label className="label" htmlFor="login-password">
+          Password
+        </label>
         <input
-          style={input}
+          id="login-password"
+          className="input"
           type="password"
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
-      </label>
-      {state === "error" && <p style={{ color: "#ff6b6b" }}>{msg}</p>}
-      <button onClick={submit} disabled={state === "working"} style={button}>
+      </div>
+
+      {state === "error" && <div className="banner banner-danger">{msg}</div>}
+
+      <button
+        onClick={submit}
+        disabled={state === "working"}
+        className="btn btn-accent btn-block"
+      >
         {state === "working" ? "Signing in…" : "Log in"}
       </button>
-      <p style={{ color: "#9aa4b2", fontSize: 14, marginBottom: 0 }}>
+
+      <p className="muted" style={{ fontSize: 14, margin: 0 }}>
         No account yet?{" "}
-        <Link href="/account/signup" style={{ color: "#8ab4ff" }}>
+        <Link href="/account/signup" style={{ fontWeight: 700 }}>
           Sign up
         </Link>
       </p>
     </div>
   );
 }
-
-const panel: React.CSSProperties = {
-  maxWidth: 440,
-  margin: "0 auto",
-  background: "#111622",
-  border: "1px solid #1c2230",
-  borderRadius: 12,
-  padding: 24,
-};
-const label: React.CSSProperties = { display: "block", marginTop: 14, fontSize: 14 };
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "#0b0e14",
-  color: "#e6e8ec",
-  marginTop: 6,
-  boxSizing: "border-box",
-};
-const button: React.CSSProperties = {
-  marginTop: 18,
-  width: "100%",
-  padding: "11px 18px",
-  borderRadius: 8,
-  border: "none",
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  cursor: "pointer",
-};

@@ -29,74 +29,60 @@ export default function BuyerSignupPage() {
   }
 
   return (
-    <div style={panel}>
-      <h1 style={{ marginTop: 0 }}>Create your account</h1>
-      <p style={{ color: "#9aa4b2", marginTop: -6 }}>
-        Access every purchase in one place. Already bought as a guest? Sign up with the same email
-        to claim your orders.
-      </p>
-      <label style={label}>
-        Email
+    <div className="card card-pad stack" style={{ maxWidth: 440, margin: "0 auto" }}>
+      <div>
+        <h1 className="h2">Create your account</h1>
+        <p className="muted" style={{ margin: "8px 0 0" }}>
+          Access every purchase in one place. Already bought as a guest? Sign up with the same email
+          to claim your orders.
+        </p>
+      </div>
+
+      <div>
+        <label className="label" htmlFor="signup-email">
+          Email
+        </label>
         <input
-          style={input}
+          id="signup-email"
+          className="input"
           type="email"
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-      </label>
-      <label style={label}>
-        Password
+      </div>
+
+      <div>
+        <label className="label" htmlFor="signup-password">
+          Password
+        </label>
         <input
-          style={input}
+          id="signup-password"
+          className="input"
           type="password"
           autoComplete="new-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submit()}
         />
-      </label>
-      {state === "error" && <p style={{ color: "#ff6b6b" }}>{msg}</p>}
-      <button onClick={submit} disabled={state === "working"} style={button}>
+      </div>
+
+      {state === "error" && <div className="banner banner-danger">{msg}</div>}
+
+      <button
+        onClick={submit}
+        disabled={state === "working"}
+        className="btn btn-accent btn-block"
+      >
         {state === "working" ? "Creating…" : "Create account"}
       </button>
-      <p style={{ color: "#9aa4b2", fontSize: 14, marginBottom: 0 }}>
+
+      <p className="muted" style={{ fontSize: 14, margin: 0 }}>
         Already have an account?{" "}
-        <Link href="/account/login" style={{ color: "#8ab4ff" }}>
+        <Link href="/account/login" style={{ fontWeight: 700 }}>
           Log in
         </Link>
       </p>
     </div>
   );
 }
-
-const panel: React.CSSProperties = {
-  maxWidth: 440,
-  margin: "0 auto",
-  background: "#111622",
-  border: "1px solid #1c2230",
-  borderRadius: 12,
-  padding: 24,
-};
-const label: React.CSSProperties = { display: "block", marginTop: 14, fontSize: 14 };
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "#0b0e14",
-  color: "#e6e8ec",
-  marginTop: 6,
-  boxSizing: "border-box",
-};
-const button: React.CSSProperties = {
-  marginTop: 18,
-  width: "100%",
-  padding: "11px 18px",
-  borderRadius: 8,
-  border: "none",
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  cursor: "pointer",
-};
