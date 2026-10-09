@@ -6,8 +6,6 @@ import { useEffect, useState } from "react";
 import { formatProductPrice } from "../../lib/api";
 import { getStorefront, type Storefront } from "../../lib/storefront";
 
-const ACCENT = "#8ab4ff";
-
 export default function StorefrontPage() {
   const params = useParams<{ handle: string }>();
   const handle = typeof params.handle === "string" ? params.handle : "";
@@ -41,20 +39,20 @@ export default function StorefrontPage() {
     };
   }, [handle]);
 
-  if (status === "loading") return <p style={{ color: "#9aa4b2" }}>Loading storefront…</p>;
+  if (status === "loading") return <p className="muted">Loading storefront…</p>;
   if (status === "error")
     return (
-      <p style={{ color: "#ff6b6b" }}>
-        Could not reach the API. Is it running on :4000?
-      </p>
+      <div className="banner banner-danger">
+        <strong>Could not reach the API. Is it running on :4000?</strong>
+      </div>
     );
   if (status === "not-found" || !store)
     return (
-      <div>
-        <h1>Storefront not found</h1>
-        <p style={{ color: "#9aa4b2" }}>
+      <div className="stack">
+        <h1 className="h1">Storefront not found</h1>
+        <p className="muted">
           No creator owns <strong>/{handle}</strong> yet.{" "}
-          <Link href="/" style={{ color: ACCENT, textDecoration: "none" }}>
+          <Link href="/" style={{ fontWeight: 700 }}>
             Browse the catalog →
           </Link>
         </p>
@@ -65,137 +63,67 @@ export default function StorefrontPage() {
   const initial = (merchant.displayName || merchant.handle || "?").charAt(0).toUpperCase();
 
   return (
-    <div>
+    <div className="stack" style={{ gap: 28 }}>
       {/* Creator banner */}
-      <div
-        style={{
-          display: "flex",
-          gap: 20,
-          alignItems: "center",
-          padding: 24,
-          borderRadius: 16,
-          border: "1px solid #1c2230",
-          background: "#111622",
-          marginBottom: 28,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="panel row" style={{ gap: 20 }}>
         {merchant.avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={merchant.avatarUrl}
-            alt={merchant.displayName}
-            width={88}
-            height={88}
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: "50%",
-              objectFit: "cover",
-              border: `2px solid ${ACCENT}`,
-              background: "#0b0e14",
-            }}
+          <div
+            className="avatar"
+            style={{ backgroundImage: `url(${merchant.avatarUrl})` }}
+            aria-label={merchant.displayName}
           />
         ) : (
-          <div
-            style={{
-              width: 88,
-              height: 88,
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 36,
-              fontWeight: 800,
-              color: "#0b0e14",
-              background: ACCENT,
-            }}
-          >
-            {initial}
-          </div>
+          <div className="avatar">{initial}</div>
         )}
         <div style={{ flex: "1 1 240px", minWidth: 0 }}>
-          <h1 style={{ margin: "0 0 4px" }}>{merchant.displayName}</h1>
+          <h1 className="h1" style={{ fontSize: "clamp(28px, 4vw, 44px)" }}>
+            {merchant.displayName}
+          </h1>
           {merchant.handle && (
-            <div style={{ color: ACCENT, fontSize: 14 }}>@{merchant.handle}</div>
+            <div className="muted" style={{ fontWeight: 800 }}>@{merchant.handle}</div>
           )}
           {merchant.bio && (
-            <p style={{ color: "#9aa4b2", margin: "10px 0 0", maxWidth: 640 }}>
+            <p className="muted" style={{ margin: "10px 0 0", maxWidth: 640 }}>
               {merchant.bio}
             </p>
           )}
         </div>
       </div>
 
-      <h2 style={{ marginTop: 0 }}>
-        Products {products.length > 0 && <span style={{ color: "#7c8699" }}>({products.length})</span>}
-      </h2>
+      <div className="row">
+        <h2 className="h2">Products</h2>
+        {products.length > 0 && (
+          <span className="pill">{products.length}</span>
+        )}
+      </div>
 
       {products.length === 0 ? (
-        <p style={{ color: "#9aa4b2" }}>No products listed yet.</p>
+        <p className="muted">No products listed yet.</p>
       ) : (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-            gap: 16,
-            marginTop: 8,
-          }}
-        >
+        <div className="grid-cards">
           {products.map((p) => (
             <Link
               key={p.id}
               href={`/product/${p.id}`}
-              style={{
-                textDecoration: "none",
-                color: "inherit",
-                border: "1px solid #1c2230",
-                borderRadius: 12,
-                background: "#111622",
-                overflow: "hidden",
-                display: "flex",
-                flexDirection: "column",
-              }}
+              className="card pcard"
+              style={{ textDecoration: "none", color: "inherit" }}
             >
               <div
-                style={{
-                  aspectRatio: "16 / 9",
-                  background: "#0b0e14",
-                  borderBottom: "1px solid #1c2230",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
+                className="pcard-cover"
+                style={
+                  p.imageUrl ? { backgroundImage: `url(${p.imageUrl})` } : undefined
+                }
               >
-                {p.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={p.imageUrl}
-                    alt={p.title}
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
-                ) : (
-                  <span style={{ fontSize: 32 }}>🌙</span>
-                )}
+                {!p.imageUrl && <span aria-hidden>🌙</span>}
               </div>
-              <div style={{ padding: 16 }}>
-                <h3 style={{ margin: "0 0 6px" }}>{p.title}</h3>
+              <div className="pcard-body">
+                <h3 className="h3">{p.title}</h3>
                 {p.category && (
-                  <span
-                    style={{
-                      display: "inline-block",
-                      fontSize: 11,
-                      color: ACCENT,
-                      background: "#16203a",
-                      borderRadius: 999,
-                      padding: "2px 10px",
-                      marginBottom: 8,
-                    }}
-                  >
+                  <span className="pill pill-sky" style={{ alignSelf: "flex-start" }}>
                     {p.category}
                   </span>
                 )}
-                <div style={{ fontWeight: 700 }}>
+                <div className="price" style={{ marginTop: "auto" }}>
                   {formatProductPrice(p)}
                 </div>
               </div>
