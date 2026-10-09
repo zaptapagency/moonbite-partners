@@ -5,34 +5,6 @@ import { useEffect, useState } from "react";
 import { getToken } from "../../../lib/dashboard";
 import { getMyProfile, updateMyProfile } from "../../../lib/storefront";
 
-const card: React.CSSProperties = {
-  border: "1px solid #1c2230",
-  borderRadius: 12,
-  padding: 16,
-  background: "#111622",
-  marginBottom: 16,
-};
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "#0b0e14",
-  color: "#e6e8ec",
-  marginTop: 6,
-  boxSizing: "border-box",
-};
-const btn: React.CSSProperties = {
-  padding: "9px 16px",
-  borderRadius: 8,
-  border: "none",
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-const subtle = { color: "#9aa4b2" as const };
-
 export default function ProfileEditorPage() {
   const [booting, setBooting] = useState(true);
   const [authed, setAuthed] = useState(false);
@@ -83,15 +55,15 @@ export default function ProfileEditorPage() {
     }
   }
 
-  if (booting) return <p>Loading…</p>;
+  if (booting) return <p className="muted">Loading…</p>;
 
   if (!authed)
     return (
-      <div style={{ maxWidth: 420 }}>
-        <h1>Storefront profile</h1>
-        <p style={subtle}>
+      <div className="stack" style={{ maxWidth: 420 }}>
+        <h1 className="h1">Storefront profile</h1>
+        <p className="muted">
           You need to be signed in.{" "}
-          <Link href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none" }}>
+          <Link href="/dashboard" style={{ fontWeight: 700 }}>
             Go to the dashboard →
           </Link>
         </p>
@@ -99,69 +71,76 @@ export default function ProfileEditorPage() {
     );
 
   return (
-    <div style={{ maxWidth: 560 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
-        <h1 style={{ marginBottom: 0 }}>Storefront profile</h1>
-        <Link href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none", fontWeight: 500 }}>
+    <div className="stack" style={{ maxWidth: 560 }}>
+      <div className="spread">
+        <h1 className="h1">Storefront profile</h1>
+        <Link href="/dashboard" className="btn btn-sm">
           ← Back to dashboard
         </Link>
       </div>
-      <p style={subtle}>
+      <p className="muted" style={{ marginTop: 0 }}>
         Your public, Gumroad-style storefront lives at a handle you choose.
       </p>
 
       {savedHandle && (
-        <div style={{ ...card, borderColor: "#223052" }}>
-          <div style={subtle}>Your public storefront</div>
+        <div className="panel">
+          <div className="label" style={{ marginBottom: 4 }}>Your public storefront</div>
           <Link
             href={`/${savedHandle}`}
-            style={{ color: "#8ab4ff", textDecoration: "none", fontWeight: 600, fontSize: 18 }}
+            style={{ textDecoration: "none", fontWeight: 800, fontSize: 20 }}
           >
             /{savedHandle}
           </Link>
         </div>
       )}
 
-      <div style={card}>
-        <label>
-          Handle
+      <div className="card card-pad stack">
+        <div>
+          <label className="label">Handle</label>
           <input
-            style={input}
+            className="input"
             placeholder="your-handle"
             value={handle}
             onChange={(e) => setHandle(e.target.value)}
           />
-        </label>
-        <p style={{ ...subtle, fontSize: 12, marginTop: 6 }}>
-          3–30 characters: lowercase letters, numbers and hyphens. This is your public URL.
-        </p>
+          <p className="muted" style={{ fontSize: 12, marginTop: 6, marginBottom: 0 }}>
+            3–30 characters: lowercase letters, numbers and hyphens. This is your public URL.
+          </p>
+        </div>
 
-        <label>
-          Bio
+        <div>
+          <label className="label">Bio</label>
           <textarea
-            style={{ ...input, minHeight: 90, resize: "vertical" }}
+            className="textarea"
+            style={{ minHeight: 90, resize: "vertical" }}
             placeholder="Tell buyers who you are…"
             value={bio}
             onChange={(e) => setBio(e.target.value)}
           />
-        </label>
+        </div>
 
-        <label>
-          Avatar URL
+        <div>
+          <label className="label">Avatar URL</label>
           <input
-            style={input}
+            className="input"
             placeholder="https://…"
             value={avatarUrl}
             onChange={(e) => setAvatarUrl(e.target.value)}
           />
-        </label>
+        </div>
 
-        {err && <p style={{ color: "#ff6b6b" }}>{err}</p>}
-        {ok && <p style={{ color: "#4ade80" }}>Saved.</p>}
+        {err && <p style={{ color: "#c0392b", fontWeight: 700, margin: 0 }}>{err}</p>}
+        {ok && (
+          <span className="pill pill-mint" style={{ alignSelf: "flex-start" }}>
+            Saved
+          </span>
+        )}
 
-        <button style={{ ...btn, marginTop: 14 }} onClick={save} disabled={busy}>
-          {busy ? "Saving…" : "Save profile"}
-        </button>
+        <div>
+          <button className="btn btn-accent" onClick={save} disabled={busy}>
+            {busy ? "Saving…" : "Save profile"}
+          </button>
+        </div>
       </div>
     </div>
   );
