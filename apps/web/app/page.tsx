@@ -23,30 +23,27 @@ function fmtMbite(units: string): string {
 }
 
 /** ★ average + (count), or a muted "No reviews yet". */
-function Stars({ rating, size = 14 }: { rating: RatingAggregate; size?: number }) {
+function Stars({ rating }: { rating: RatingAggregate }) {
   if (!rating || rating.count === 0) {
-    return <span style={{ color: "#5c6577", fontSize: size }}>No reviews yet</span>;
+    return <span className="muted" style={{ fontSize: 13 }}>No reviews yet</span>;
   }
   const avg = rating.average ?? 0;
   const full = Math.round(avg);
   return (
-    <span style={{ fontSize: size, color: "#f5c451" }}>
-      <span aria-hidden>{"★".repeat(full)}</span>
-      <span aria-hidden style={{ color: "#3a4151" }}>{"★".repeat(5 - full)}</span>{" "}
-      <span style={{ color: "#9aa4b2" }}>
+    <span className="stars">
+      <span aria-hidden>
+        {Array.from({ length: 5 }).map((_, i) => (
+          <span key={i} className={i < full ? "on" : "off"}>
+            ★
+          </span>
+        ))}
+      </span>{" "}
+      <span className="muted" style={{ fontWeight: 700 }}>
         {avg.toFixed(1)} ({rating.count})
       </span>
     </span>
   );
 }
-
-const inputStyle: React.CSSProperties = {
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "#0b0e14",
-  color: "#e6e8ec",
-};
 
 export default function CatalogPage() {
   const [q, setQ] = useState("");
@@ -89,115 +86,111 @@ export default function CatalogPage() {
   }, [q, category]);
 
   return (
-    <div>
-      <h1>Digital products, paid in MBITE</h1>
-      <p style={{ color: "#9aa4b2" }}>
-        No chargebacks. Instant on-chain settlement. (See PLAN.md §1.)
-      </p>
-
-      <div
-        style={{
-          display: "flex",
-          gap: 12,
-          flexWrap: "wrap",
-          margin: "20px 0",
-        }}
-      >
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="Search products…"
-          style={{ ...inputStyle, flex: "1 1 240px", minWidth: 0 }}
-        />
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          style={{ ...inputStyle, flex: "0 1 200px" }}
-        >
-          <option value="">All categories</option>
-          {categories.map((c) => (
-            <option key={c} value={c}>
-              {c}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {error && <p style={{ color: "#ff6b6b" }}>{error}</p>}
-      {!error && !loading && products.length === 0 && (
-        <p style={{ color: "#9aa4b2" }}>
-          No products match. Try clearing the search or category filter.
-        </p>
-      )}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))",
-          gap: 16,
-          marginTop: 8,
-          opacity: loading ? 0.6 : 1,
-        }}
-      >
-        {products.map((p) => (
-          <div
-            key={p.id}
-            style={{
-              border: "1px solid #1c2230",
-              borderRadius: 12,
-              padding: 16,
-              background: "#111622",
-            }}
-          >
-            {p.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={p.imageUrl}
-                alt={p.title}
-                style={{
-                  width: "100%",
-                  height: 120,
-                  objectFit: "cover",
-                  borderRadius: 8,
-                  marginBottom: 10,
-                  background: "#0b0e14",
-                  border: "1px solid #1c2230",
-                }}
-              />
-            )}
-            <div style={{ fontSize: 12, color: "#7c8699" }}>{p.merchant.displayName}</div>
-            <h3 style={{ margin: "4px 0" }}>{p.title}</h3>
-            {p.category && (
-              <span
-                style={{
-                  display: "inline-block",
-                  fontSize: 11,
-                  color: "#8ab4ff",
-                  background: "#16203a",
-                  borderRadius: 999,
-                  padding: "2px 10px",
-                  marginBottom: 6,
-                }}
-              >
-                {p.category}
-              </span>
-            )}
-            <p style={{ color: "#9aa4b2", minHeight: 40 }}>{p.description}</p>
-            <div style={{ marginBottom: 6 }}>
-              <Stars rating={p.rating} />
-            </div>
-            <strong>{formatProductPrice(p)}</strong>
-            <div style={{ marginTop: 12 }}>
-              <Link
-                href={`/product/${p.id}`}
-                style={{ color: "#8ab4ff", textDecoration: "none" }}
-              >
-                Buy →
-              </Link>
-            </div>
+    <div className="stack" style={{ gap: 32 }}>
+      {/* Hero */}
+      <section className="panel" style={{ padding: "40px 28px" }}>
+        <div className="stack" style={{ maxWidth: 680 }}>
+          <span className="pill pill-pink" style={{ alignSelf: "flex-start" }}>
+            Paid in MBITE
+          </span>
+          <h1 className="h1">Sell digital products. Get paid in MBITE.</h1>
+          <p className="muted" style={{ fontSize: 18, margin: 0 }}>
+            No chargebacks. Instant on-chain settlement. Launch a storefront and
+            start earning in minutes. (See PLAN.md §1.)
+          </p>
+          <div className="row">
+            <Link href="/dashboard" className="btn btn-accent">
+              Start selling →
+            </Link>
+            <a href="#catalog" className="btn">
+              Browse the catalog
+            </a>
           </div>
-        ))}
-      </div>
+        </div>
+      </section>
+
+      {/* Catalog */}
+      <section id="catalog" className="stack">
+        <div className="spread">
+          <h2 className="h2">Discover products</h2>
+        </div>
+
+        <div className="row" style={{ gap: 12 }}>
+          <input
+            className="input"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="Search products…"
+            style={{ flex: "1 1 240px", minWidth: 0 }}
+          />
+          <select
+            className="select"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+            style={{ flex: "0 1 200px" }}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {error && (
+          <div className="banner banner-danger">
+            <strong>{error}</strong>
+          </div>
+        )}
+        {!error && !loading && products.length === 0 && (
+          <p className="muted">
+            No products match. Try clearing the search or category filter.
+          </p>
+        )}
+
+        <div
+          className="grid-cards"
+          style={{ opacity: loading ? 0.6 : 1, transition: "opacity .15s" }}
+        >
+          {products.map((p) => (
+            <Link
+              key={p.id}
+              href={`/product/${p.id}`}
+              className="card pcard"
+              style={{ textDecoration: "none", color: "inherit" }}
+            >
+              <div
+                className="pcard-cover"
+                style={
+                  p.imageUrl ? { backgroundImage: `url(${p.imageUrl})` } : undefined
+                }
+              >
+                {!p.imageUrl && <span aria-hidden>🌙</span>}
+              </div>
+              <div className="pcard-body">
+                <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>
+                  {p.merchant.displayName}
+                </div>
+                <h3 className="h3">{p.title}</h3>
+                {p.category && (
+                  <span className="pill pill-sky" style={{ alignSelf: "flex-start" }}>
+                    {p.category}
+                  </span>
+                )}
+                <p className="muted" style={{ margin: 0, fontSize: 14, flex: 1 }}>
+                  {p.description}
+                </p>
+                <Stars rating={p.rating} />
+                <div className="spread" style={{ marginTop: 4 }}>
+                  <span className="price">{formatProductPrice(p)}</span>
+                  <span className="btn btn-sm btn-accent">Buy →</span>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }
