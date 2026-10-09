@@ -1,0 +1,142 @@
+/* MoonBite Partners — Gumroad-inspired neobrutalist design system.
+   Light, bold, thick black borders + hard offset shadows + signature pink.
+   Pages style themselves with these classes/tokens (no inline dark hex). */
+
+:root {
+  --bg: #ffffff;
+  --cream: #f4f4f0;
+  --ink: #000000;
+  --muted: #5b5b57;
+  --pink: #ff90e8;
+  --mint: #22a094;
+  --yellow: #ffc900;
+  --sky: #90a8ed;
+  --border: 2px solid #000;
+  --border-3: 3px solid #000;
+  --shadow: 4px 4px 0 #000;
+  --shadow-sm: 2px 2px 0 #000;
+  --shadow-lg: 6px 6px 0 #000;
+  --radius: 14px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body { padding: 0; margin: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: inherit; }
+
+/* ---- layout ---- */
+.container { max-width: 1080px; margin: 0 auto; padding: 0 20px; width: 100%; }
+.section { padding: 28px 0; }
+.stack > * + * { margin-top: 16px; }
+.row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.spread { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+/* ---- type ---- */
+.h1 { font-size: clamp(34px, 5.5vw, 60px); font-weight: 800; letter-spacing: -0.03em; line-height: 1.02; margin: 0; }
+.h2 { font-size: clamp(24px, 3vw, 34px); font-weight: 800; letter-spacing: -0.02em; margin: 0; }
+.h3 { font-size: 19px; font-weight: 800; margin: 0; }
+.muted { color: var(--muted); }
+.price { font-weight: 800; font-size: 20px; }
+
+/* ---- surfaces ---- */
+.card {
+  background: #fff;
+  border: var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.card-pad { padding: 18px; }
+.panel {
+  background: var(--cream);
+  border: var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+/* ---- buttons ---- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: var(--border-3); border-radius: 999px;
+  background: #fff; color: #000; font-weight: 800; font-size: 15px;
+  padding: 11px 20px; cursor: pointer; text-decoration: none;
+  box-shadow: var(--shadow); transition: transform .06s ease, box-shadow .06s ease;
+  white-space: nowrap;
+}
+.btn:hover { transform: translate(2px, 2px); box-shadow: var(--shadow-sm); }
+.btn:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #000; }
+.btn[disabled] { opacity: .5; cursor: default; transform: none; box-shadow: var(--shadow); }
+.btn-accent { background: var(--pink); }
+.btn-ink { background: #000; color: #fff; }
+.btn-sm { padding: 7px 14px; font-size: 13px; border-width: 2px; box-shadow: var(--shadow-sm); }
+.btn-block { width: 100%; }
+
+/* ---- inputs ---- */
+.input, .select, .textarea {
+  width: 100%; border: var(--border); border-radius: var(--radius-sm);
+  padding: 11px 13px; background: #fff; color: #000; font: inherit;
+}
+.input:focus, .select:focus, .textarea:focus { outline: 3px solid var(--sky); outline-offset: 0; }
+.label { display: block; font-weight: 700; font-size: 13px; margin-bottom: 6px; }
+
+/* ---- pills / badges ---- */
+.pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  border: var(--border); border-radius: 999px; padding: 3px 12px;
+  font-weight: 800; font-size: 12px; background: #fff;
+}
+.pill-pink { background: var(--pink); }
+.pill-yellow { background: var(--yellow); }
+.pill-mint { background: var(--mint); color: #fff; }
+.pill-sky { background: var(--sky); }
+
+/* ---- product grid + cards ---- */
+.grid-cards {
+  display: grid; gap: 20px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+}
+.pcard { overflow: hidden; display: flex; flex-direction: column; }
+.pcard-cover {
+  aspect-ratio: 16 / 10; background: var(--cream);
+  border-bottom: var(--border); display: flex; align-items: center; justify-content: center;
+  font-size: 40px; background-size: cover; background-position: center;
+}
+.pcard-body { padding: 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+/* ---- stars ---- */
+.stars { color: #000; font-weight: 800; font-size: 13px; }
+.stars .on { color: #000; }
+.stars .off { color: #cfcfca; }
+
+/* ---- avatar ---- */
+.avatar {
+  width: 88px; height: 88px; border-radius: 999px; border: var(--border-3);
+  background: var(--pink); display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 34px; overflow: hidden; background-size: cover; background-position: center;
+}
+
+/* ---- status banner (checkout / receipt) ---- */
+.banner { border: var(--border); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); }
+.banner-success { background: #d9f7e4; }
+.banner-info { background: #e6edff; }
+.banner-warn { background: #fff3c4; }
+.banner-danger { background: #ffd9d6; }
+
+/* ---- table ---- */
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 8px 10px; }
+.tbl td { padding: 10px; border-top: var(--border); }
+
+/* ---- misc ---- */
+code, .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
+.hr { height: 2px; background: #000; border: 0; margin: 20px 0; }

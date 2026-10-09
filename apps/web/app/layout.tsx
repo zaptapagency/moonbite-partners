@@ -1,76 +1,50 @@
 import type { ReactNode } from "react";
+import "./globals.css";
 
 export const metadata = {
   title: "MoonBite Partners",
-  description: "Buy digital products with MBITE.",
+  description: "Sell digital products. Get paid in MBITE.",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body
-        style={{
-          fontFamily: "system-ui, sans-serif",
-          margin: 0,
-          background: "#0b0e14",
-          color: "#e6e8ec",
-          minHeight: "100vh",
-          display: "flex",
-          flexDirection: "column",
-        }}
-      >
+      <body style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <header
           style={{
-            padding: "16px 24px",
-            borderBottom: "1px solid #1c2230",
-            fontWeight: 700,
-            display: "flex",
-            justifyContent: "space-between",
-          }}
-        >
-          <a href="/" style={{ color: "inherit", textDecoration: "none" }}>
-            🌙 MoonBite Partners
-          </a>
-          <nav style={{ display: "flex", gap: 20, fontWeight: 500 }}>
-            <a href="/library" style={{ color: "#9aa4b2", textDecoration: "none" }}>
-              My Library
-            </a>
-            <a href="/dashboard" style={{ color: "#8ab4ff", textDecoration: "none" }}>
-              Merchant dashboard →
-            </a>
-          </nav>
-        </header>
-        <main style={{ maxWidth: 960, margin: "0 auto", padding: 24, width: "100%", boxSizing: "border-box", flex: 1 }}>
-          {children}
-        </main>
-        <footer
-          style={{
-            borderTop: "1px solid #1c2230",
-            padding: "20px 24px",
-            marginTop: 24,
+            borderBottom: "2px solid #000",
+            background: "#ff90e8",
           }}
         >
           <div
-            style={{
-              maxWidth: 960,
-              margin: "0 auto",
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 16,
-              alignItems: "center",
-              justifyContent: "space-between",
-              color: "#7c8699",
-              fontSize: 13,
-            }}
+            className="container"
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}
           >
-            <span>© {new Date().getFullYear()} MoonBite Partners · Non-custodial MBITE payments.</span>
-            <nav style={{ display: "flex", gap: 16 }}>
-              <a href="/terms" style={{ color: "#9aa4b2", textDecoration: "none" }}>
-                Terms of Service
-              </a>
-              <a href="/prohibited" style={{ color: "#9aa4b2", textDecoration: "none" }}>
-                Prohibited Goods
-              </a>
+            <a href="/" style={{ textDecoration: "none", fontWeight: 800, fontSize: 20, letterSpacing: "-0.02em" }}>
+              🌙 MoonBite
+            </a>
+            <nav style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <a href="/library" className="btn btn-sm">My Library</a>
+              <a href="/dashboard" className="btn btn-sm btn-ink">Start selling</a>
+            </nav>
+          </div>
+        </header>
+
+        <main className="container section" style={{ flex: 1, width: "100%" }}>
+          {children}
+        </main>
+
+        <footer style={{ borderTop: "2px solid #000", background: "var(--cream)" }}>
+          <div
+            className="container"
+            style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", padding: "20px" }}
+          >
+            <span className="muted" style={{ fontSize: 13 }}>
+              © {new Date().getFullYear()} MoonBite Partners · Non-custodial MBITE payments.
+            </span>
+            <nav style={{ display: "flex", gap: 16, fontSize: 13, fontWeight: 700 }}>
+              <a href="/terms" style={{ textDecoration: "none" }}>Terms</a>
+              <a href="/prohibited" style={{ textDecoration: "none" }}>Prohibited goods</a>
             </nav>
           </div>
         </footer>
