@@ -39,32 +39,11 @@ function fmtCoins(coins: number): string {
 }
 
 /**
- * MBITE-native price string with an optional "~$X" estimate. MBITE is always the
- * real price; the USD figure is a display-only hint (null when no rate known).
+ * MBITE-native price string. MBITE is the only currency — no fiat estimate.
  */
-export function formatProductPrice(
-  p: { priceMbite: string; priceCurrency?: string; displayUsd?: string | null },
-  usdPerMbite?: number | null,
-): string {
+export function formatProductPrice(p: { priceMbite: string }): string {
   const coins = mbiteCoins(p.priceMbite);
-  const mbite = Number.isNaN(coins) ? `${p.priceMbite}` : `${fmtCoins(coins)} MBITE`;
-  const est =
-    usdPerMbite && usdPerMbite > 0 && !Number.isNaN(coins)
-      ? ` (~$${(coins * usdPerMbite).toFixed(2)})`
-      : "";
-  return `${mbite}${est}`;
-}
-
-/** Fetch the display-only MBITE→USD rate (null if unavailable). */
-export async function getUsdPerMbite(): Promise<number | null> {
-  try {
-    const res = await fetch(`${BASE}/pricing/rate`, { cache: "no-store" });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { usdPerMbite: number | null };
-    return body.usdPerMbite ?? null;
-  } catch {
-    return null;
-  }
+  return Number.isNaN(coins) ? `${p.priceMbite}` : `${fmtCoins(coins)} MBITE`;
 }
 
 /** Optional catalog filters (Phase 2 discovery). */

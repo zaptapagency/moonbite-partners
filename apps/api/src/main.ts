@@ -12,9 +12,7 @@ import { ConfigService } from "@nestjs/config";
 import { AppModule } from "./app.module";
 
 async function bootstrap() {
-  // rawBody: true preserves the raw request buffer for HMAC webhook verification
-  // (e.g. the on-ramp provider webhook) while still JSON-parsing normally.
-  const app = await NestFactory.create(AppModule, { rawBody: true });
+  const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
   app.useGlobalPipes(

@@ -7,7 +7,6 @@ import {
   createReview,
   formatProductPrice,
   getProduct,
-  getUsdPerMbite,
   listReviews,
   type ProductSummary,
   type RatingAggregate,
@@ -63,7 +62,6 @@ export default function ProductPage({
 
   const [product, setProduct] = useState<ProductSummary | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [usdPerMbite, setUsdPerMbite] = useState<number | null>(null);
 
   const [email, setEmail] = useState("");
   const [pwywAmount, setPwywAmount] = useState("");
@@ -86,7 +84,6 @@ export default function ProductPage({
     listReviews(id)
       .then(setReviews)
       .catch(() => setReviews([]));
-    getUsdPerMbite().then(setUsdPerMbite);
   }, [id]);
 
   // PWYW floor in whole MBITE (minPriceMbite, else the product's priceMbite).
@@ -179,7 +176,7 @@ export default function ProductPage({
       )}
       {product && !product.pwyw && (
         <p>
-          <strong>{formatProductPrice(product, usdPerMbite)}</strong>
+          <strong>{formatProductPrice(product)}</strong>
         </p>
       )}
       {product?.pwyw && (

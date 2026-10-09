@@ -164,94 +164,6 @@ export class PaymentsService {
     return buyer.id;
   }
 
-  // ── Fiat on-ramp (ONRAMP.md) ──────────────────────────────────────────
-  /**
-   * The product's fixed MBITE price (MBITE-native or USD-oracle converted).
-   * Used by the on-ramp quote engine. PWYW/discounts are out of scope for v1 fiat.
-   */
-  async baseAmountMbite(productId: string): Promise<bigint> {
-    const product = await this.prisma.product.findUnique({ where: { id: productId } });
-    if (!product || !product.active) throw new NotFoundException("Product not available");
-    if (product.pwyw) throw new BadRequestException("Pay-what-you-want is not supported for fiat yet");
-    return this.basePrice(product, undefined);
-  }
-
-  /**
-   * Create a FIAT_ONRAMP order: still derives the merchant's own MBITE address
-   * (the liquidity desk sends MBITE there), but funding comes from the provider
-   * webhook, not on-chain detection. See ONRAMP.md §2/§6.
-   */
-  async createFiatOrder(input: {
-    productId: string;
-    mbiteAmount: bigint;
-    fiatAmount: number;
-    fiatCurrency: string;
-    providerRef: string;
-    buyerRef?: string;
-  }): Promise<Order> {
-    const product = await this.prisma.product.findUnique({
-      where: { id: input.productId },
-      include: { merchant: true },
-    });
-    if (!product || !product.active) throw new NotFoundException("Product not available");
-    if (!product.merchant.settlementXpub) {
-      throw new BadRequestException("Merchant has not configured a settlement xpub");
-    }
-    const index = await this.merchants.reserveKeyIndex(product.merchantId);
-    const payToAddress = this.hd.deriveAddress(product.merchant.settlementXpub, index);
-    const fee = feeFromBps(input.mbiteAmount, product.merchant.feeBps);
-    const buyerId = input.buyerRef ? await this.linkBuyer(input.buyerRef) : undefined;
-
-    return this.prisma.order.create({
-      data: {
-        merchantId: product.merchantId,
-        productId: product.id,
-        status: "AWAITING_PAYMENT",
-        paymentRoute: "FIAT_ONRAMP",
-        onrampProviderRef: input.providerRef,
-        fiatAmount: input.fiatAmount,
-        fiatCurrency: input.fiatCurrency,
-        payToAddress,
-        derivationIndex: index,
-        amountMbite: input.mbiteAmount,
-        feeMbite: fee,
-        requiredConfirmations: 0,
-        buyerId,
-        buyerRef: input.buyerRef,
-        quoteExpiresAt: new Date(Date.now() + this.quoteTtlMs),
-      },
-    });
-  }
-
-  /** Find a fiat order by its provider reference (for the webhook). */
-  findByProviderRef(providerRef: string) {
-    return this.prisma.order.findUnique({ where: { onrampProviderRef: providerRef } });
-  }
-
-  /**
-   * Mark a FIAT order funded (provider settled) and deliver. Idempotent — safe
-   * to call twice for the same webhook. No on-chain detection involved.
-   */
-  async settleOffchain(orderId: string): Promise<Order> {
-    const order = await this.prisma.order.findUnique({
-      where: { id: orderId },
-      include: { product: true },
-    });
-    if (!order) throw new NotFoundException("Order not found");
-    if (["PAID", "FULFILLED", "REFUNDED", "CANCELLED"].includes(order.status)) return order;
-
-    const updated = await this.prisma.order.update({
-      where: { id: orderId },
-      data: { status: "PAID", receivedMbite: order.amountMbite, paidAt: new Date() },
-      include: { product: true },
-    });
-    try {
-      await this.delivery.fulfill(updated);
-    } catch (e) {
-      this.log.error(`Fiat delivery failed for ${orderId}: ${String(e)}`);
-    }
-    return updated;
-  }
 
   async getInvoiceView(orderId: string): Promise<InvoiceView> {
     const order = await this.prisma.order.findUnique({
@@ -376,11 +288,7 @@ export class PaymentsService {
   /** Orders that still need chain reconciliation. */
   openOrders() {
     return this.prisma.order.findMany({
-      where: {
-        status: { in: ["AWAITING_PAYMENT", "DETECTED", "OVERPAID"] },
-        // Fiat orders are funded by the provider webhook, not on-chain.
-        paymentRoute: "CRYPTO_NATIVE",
-      },
+      where: { status: { in: ["AWAITING_PAYMENT", "DETECTED", "OVERPAID"] } },
       select: { id: true },
     });
   }

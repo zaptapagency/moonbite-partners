@@ -159,13 +159,6 @@ model Order {
   discountCode          String?
   discountMbite         BigInt      @default(0)
 
-  /// How this order is funded: on-chain MBITE, or a fiat on-ramp (ONRAMP.md).
-  paymentRoute          PaymentRoute @default(CRYPTO_NATIVE)
-  /// On-ramp provider reference (unique) used to settle a FIAT_ONRAMP order.
-  onrampProviderRef     String?     @unique
-  fiatAmount            Decimal?    @db.Decimal(18, 2)
-  fiatCurrency          String?
-
   txid                  String?
   quoteExpiresAt        DateTime
   paidAt                DateTime?
@@ -182,29 +175,6 @@ model Order {
   @@index([buyerId])
 }
 
-enum PaymentRoute {
-  CRYPTO_NATIVE
-  FIAT_ONRAMP
-}
-
-/// A locked fiat→MBITE price quote (ONRAMP.md §3). Consumed when a fiat
-/// on-ramp session/order is created.
-model Quote {
-  id            String   @id @default(cuid())
-  productId     String
-  /// Base MBITE the buyer is purchasing (post PWYW/discount), smallest unit.
-  mbiteAmount   BigInt
-  fiatCurrency  String   @default("USD")
-  /// Buyer-facing fiat charge, including spread.
-  fiatAmount    Decimal  @db.Decimal(18, 2)
-  spreadBps     Int
-  mbitePerUsd   Decimal  @db.Decimal(24, 8)
-  status        String   @default("PENDING") // PENDING | USED | EXPIRED
-  expiresAt     DateTime
-  createdAt     DateTime @default(now())
-
-  @@index([status])
-}
 
 /// A buyer account — the purchase "Library". Linked to orders by email.
 model Buyer {

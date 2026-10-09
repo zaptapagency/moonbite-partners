@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   formatProductPrice,
-  getUsdPerMbite,
   listCategories,
   listProducts,
   type ProductSummary,
@@ -53,17 +52,15 @@ export default function CatalogPage() {
   const [q, setQ] = useState("");
   const [category, setCategory] = useState("");
   const [categories, setCategories] = useState<string[]>([]);
-  const [usdPerMbite, setUsdPerMbite] = useState<number | null>(null);
   const [products, setProducts] = useState<ProductSummary[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Load the category list + display rate once.
+  // Load the category list once.
   useEffect(() => {
     listCategories()
       .then(setCategories)
       .catch(() => setCategories([]));
-    getUsdPerMbite().then(setUsdPerMbite);
   }, []);
 
   // Refetch whenever the search text or category changes (debounced on q).
@@ -189,7 +186,7 @@ export default function CatalogPage() {
             <div style={{ marginBottom: 6 }}>
               <Stars rating={p.rating} />
             </div>
-            <strong>{formatProductPrice(p, usdPerMbite)}</strong>
+            <strong>{formatProductPrice(p)}</strong>
             <div style={{ marginTop: 12 }}>
               <Link
                 href={`/product/${p.id}`}

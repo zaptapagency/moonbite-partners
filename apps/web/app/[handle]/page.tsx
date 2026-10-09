@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { formatProductPrice, getUsdPerMbite } from "../../lib/api";
+import { formatProductPrice } from "../../lib/api";
 import { getStorefront, type Storefront } from "../../lib/storefront";
 
 const ACCENT = "#8ab4ff";
@@ -12,13 +12,11 @@ export default function StorefrontPage() {
   const params = useParams<{ handle: string }>();
   const handle = typeof params.handle === "string" ? params.handle : "";
   const [store, setStore] = useState<Storefront | null>(null);
-  const [usdPerMbite, setUsdPerMbite] = useState<number | null>(null);
   const [status, setStatus] = useState<"loading" | "ok" | "not-found" | "error">(
     "loading",
   );
 
   useEffect(() => {
-    getUsdPerMbite().then(setUsdPerMbite);
   }, []);
 
   useEffect(() => {
@@ -198,7 +196,7 @@ export default function StorefrontPage() {
                   </span>
                 )}
                 <div style={{ fontWeight: 700 }}>
-                  {formatProductPrice(p, usdPerMbite)}
+                  {formatProductPrice(p)}
                 </div>
               </div>
             </Link>
