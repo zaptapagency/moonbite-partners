@@ -14,30 +14,21 @@ const liStyle: React.CSSProperties = {
 export default function ProhibitedPage() {
   return (
     <article style={{ maxWidth: 760, lineHeight: 1.6 }}>
-      <div
-        style={{
-          border: "1px solid #6b5c1f",
-          background: "#1a170c",
-          color: "#e6c84a",
-          borderRadius: 12,
-          padding: "12px 16px",
-          fontSize: 13,
-        }}
-      >
+      <div className="banner banner-warn" style={{ fontSize: 13 }}>
         <strong>Template — not legal advice.</strong> This is placeholder copy
         for a demo platform. It has not been reviewed by a lawyer. Replace it
         with a policy drafted for your jurisdiction before going live.
       </div>
 
-      <h1 style={{ marginTop: 24 }}>Prohibited Goods policy</h1>
-      <p style={{ color: "#9aa4b2" }}>
+      <h1 className="h1" style={{ marginTop: 24 }}>Prohibited Goods policy</h1>
+      <p className="muted">
         Merchants may sell only lawful digital products. Listing or attempting to
         sell any of the following is strictly prohibited and may result in
         immediate removal and account suspension.
       </p>
 
       <section style={sectionStyle}>
-        <h2>1. Illegal goods &amp; content</h2>
+        <h2 className="h2">1. Illegal goods &amp; content</h2>
         <ul>
           <li style={liStyle}>
             Anything illegal to sell or possess in the buyer&apos;s or
@@ -58,7 +49,7 @@ export default function ProhibitedPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>2. Malware &amp; security-circumvention tools</h2>
+        <h2 className="h2">2. Malware &amp; security-circumvention tools</h2>
         <ul>
           <li style={liStyle}>
             Malware, ransomware, spyware, keyloggers, or botnet tooling.
@@ -74,7 +65,7 @@ export default function ProhibitedPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>3. Regulated products</h2>
+        <h2 className="h2">3. Regulated products</h2>
         <ul>
           <li style={liStyle}>
             Products that require a license we cannot verify — including
@@ -89,7 +80,7 @@ export default function ProhibitedPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>4. Securities-like &amp; investment products</h2>
+        <h2 className="h2">4. Securities-like &amp; investment products</h2>
         <ul>
           <li style={liStyle}>
             Securities, tokenized shares, or anything marketed as an investment
@@ -106,7 +97,7 @@ export default function ProhibitedPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>5. Deceptive or harmful offerings</h2>
+        <h2 className="h2">5. Deceptive or harmful offerings</h2>
         <ul>
           <li style={liStyle}>
             Counterfeits, fake reviews, engagement bots, or fraudulent
@@ -120,7 +111,7 @@ export default function ProhibitedPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>6. Takedown rights</h2>
+        <h2 className="h2">6. Takedown rights</h2>
         <p>
           We may remove any listing, cancel orders, and suspend or terminate
           accounts at our discretion — with or without notice — when we believe

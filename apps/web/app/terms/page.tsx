@@ -10,26 +10,17 @@ const sectionStyle: React.CSSProperties = {
 export default function TermsPage() {
   return (
     <article style={{ maxWidth: 760, lineHeight: 1.6 }}>
-      <div
-        style={{
-          border: "1px solid #6b5c1f",
-          background: "#1a170c",
-          color: "#e6c84a",
-          borderRadius: 12,
-          padding: "12px 16px",
-          fontSize: 13,
-        }}
-      >
+      <div className="banner banner-warn" style={{ fontSize: 13 }}>
         <strong>Template — not legal advice.</strong> This is placeholder copy
         for a demo platform. It has not been reviewed by a lawyer. Replace it
         with terms drafted for your jurisdiction before going live.
       </div>
 
-      <h1 style={{ marginTop: 24 }}>Terms of Service</h1>
-      <p style={{ color: "#9aa4b2" }}>Last updated: template version.</p>
+      <h1 className="h1" style={{ marginTop: 24 }}>Terms of Service</h1>
+      <p className="muted">Last updated: template version.</p>
 
       <section style={sectionStyle}>
-        <h2>1. The platform</h2>
+        <h2 className="h2">1. The platform</h2>
         <p>
           MoonBite Partners (&quot;the platform&quot;, &quot;we&quot;) is a
           marketplace that lets independent merchants sell digital products
@@ -40,7 +31,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>2. Payments are final</h2>
+        <h2 className="h2">2. Payments are final</h2>
         <p>
           MBITE payments are cryptocurrency transactions. Once a payment is
           broadcast and confirmed on-chain, it is irreversible. There are no
@@ -51,7 +42,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>3. Refunds are merchant-driven</h2>
+        <h2 className="h2">3. Refunds are merchant-driven</h2>
         <p>
           Because payments settle directly and non-custodially, any refund is
           issued at the merchant&apos;s discretion by sending MBITE back to the
@@ -64,7 +55,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>4. Platform fees</h2>
+        <h2 className="h2">4. Platform fees</h2>
         <p>
           The platform charges merchants a fee on completed sales, expressed in
           basis points and shown on the merchant dashboard (for example, a fee
@@ -76,7 +67,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>5. Non-custodial disclaimer</h2>
+        <h2 className="h2">5. Non-custodial disclaimer</h2>
         <p>
           The platform is non-custodial. Orders are paid to freshly derived
           addresses controlled by the merchant&apos;s own wallet (via their
@@ -90,11 +81,11 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>6. Acceptable use</h2>
+        <h2 className="h2">6. Acceptable use</h2>
         <p>
           You agree not to use the platform for anything unlawful or prohibited.
           Merchants must comply with our{" "}
-          <a href="/prohibited" style={{ color: "#8ab4ff" }}>
+          <a href="/prohibited" style={{ fontWeight: 700 }}>
             Prohibited Goods policy
           </a>
           . We may suspend accounts, remove listings, and cooperate with
@@ -103,7 +94,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>7. No warranty &amp; limitation of liability</h2>
+        <h2 className="h2">7. No warranty &amp; limitation of liability</h2>
         <p>
           The platform is provided &quot;as is&quot; without warranties of any
           kind. Products are sold by merchants; disputes about a product&apos;s
@@ -115,7 +106,7 @@ export default function TermsPage() {
       </section>
 
       <section style={sectionStyle}>
-        <h2>8. Changes</h2>
+        <h2 className="h2">8. Changes</h2>
         <p>
           We may update these terms from time to time. Continued use of the
           platform after an update constitutes acceptance of the revised terms.

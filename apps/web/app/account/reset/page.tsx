@@ -30,55 +30,38 @@ export default function ResetPage() {
     }
   }
 
-  const input: React.CSSProperties = {
-    width: "100%",
-    padding: 10,
-    borderRadius: 8,
-    border: "1px solid #2a3344",
-    background: "#0b0e14",
-    color: "#e6e8ec",
-    marginTop: 6,
-    boxSizing: "border-box",
-  };
-
   return (
-    <div style={{ maxWidth: 440 }}>
-      <h1>Reset your password</h1>
-      {!token && <p style={{ color: "#ff6b6b" }}>This link is missing its token.</p>}
+    <div className="card card-pad stack" style={{ maxWidth: 440, margin: "0 auto" }}>
+      <h1 className="h2">Reset your password</h1>
+      {!token && <div className="banner banner-danger">This link is missing its token.</div>}
       {state === "ok" ? (
-        <p style={{ color: "#4ade80" }}>
-          ✅ Password updated.{" "}
-          <Link href="/dashboard" style={{ color: "#8ab4ff" }}>
+        <div className="banner banner-success">
+          Password updated.{" "}
+          <Link href="/dashboard" style={{ fontWeight: 700 }}>
             Sign in
           </Link>
           .
-        </p>
+        </div>
       ) : (
         <>
-          <label>
-            New password
+          <div>
+            <label className="label" htmlFor="reset-password">
+              New password
+            </label>
             <input
-              style={input}
+              id="reset-password"
+              className="input"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={!token}
             />
-          </label>
-          {state === "error" && <p style={{ color: "#ff6b6b" }}>{msg}</p>}
+          </div>
+          {state === "error" && <div className="banner banner-danger">{msg}</div>}
           <button
             onClick={submit}
             disabled={!token || state === "working"}
-            style={{
-              marginTop: 14,
-              padding: "10px 18px",
-              borderRadius: 8,
-              border: "none",
-              background: "#8ab4ff",
-              color: "#0b0e14",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
+            className="btn btn-accent btn-block"
           >
             {state === "working" ? "Saving…" : "Set new password"}
           </button>

@@ -24,22 +24,22 @@ export default function VerifyPage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: 440 }}>
-      <h1>Email verification</h1>
-      {state === "working" && <p style={{ color: "#9aa4b2" }}>Verifying…</p>}
+    <div className="stack" style={{ maxWidth: 440, margin: "0 auto" }}>
+      <h1 className="h2">Email verification</h1>
+      {state === "working" && <div className="banner banner-info">Verifying…</div>}
       {state === "ok" && (
-        <p style={{ color: "#4ade80" }}>
-          ✅ Your email is verified. You can close this tab or{" "}
-          <Link href="/dashboard" style={{ color: "#8ab4ff" }}>
+        <div className="banner banner-success">
+          Your email is verified. You can close this tab or{" "}
+          <Link href="/dashboard" style={{ fontWeight: 700 }}>
             go to your dashboard
           </Link>
           .
-        </p>
+        </div>
       )}
       {state === "error" && (
-        <p style={{ color: "#ff6b6b" }}>
+        <div className="banner banner-danger">
           {msg} The link may have expired — request a new one from your dashboard.
-        </p>
+        </div>
       )}
     </div>
   );
