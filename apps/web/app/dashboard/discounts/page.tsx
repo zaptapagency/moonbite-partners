@@ -22,34 +22,6 @@ function fmtMbite(units: string): string {
   }
 }
 
-const card: React.CSSProperties = {
-  border: "1px solid #1c2230",
-  borderRadius: 12,
-  padding: 16,
-  background: "#111622",
-  marginBottom: 16,
-};
-const input: React.CSSProperties = {
-  width: "100%",
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid #2a3344",
-  background: "#0b0e14",
-  color: "#e6e8ec",
-  marginTop: 6,
-  boxSizing: "border-box",
-};
-const btn: React.CSSProperties = {
-  padding: "9px 16px",
-  borderRadius: 8,
-  border: "none",
-  background: "#8ab4ff",
-  color: "#0b0e14",
-  fontWeight: 700,
-  cursor: "pointer",
-};
-const subtle = { color: "#9aa4b2" as const };
-
 export default function DiscountsPage() {
   const [authed, setAuthed] = useState<boolean | null>(null);
   const [items, setItems] = useState<Discount[] | null>(null);
@@ -70,14 +42,14 @@ export default function DiscountsPage() {
     if (ok) void refresh();
   }, [refresh]);
 
-  if (authed === null) return <p>Loading…</p>;
+  if (authed === null) return <p className="muted">Loading…</p>;
   if (!authed) {
     return (
-      <div style={{ maxWidth: 420 }}>
-        <h1>Discount codes</h1>
-        <p style={subtle}>
+      <div className="stack" style={{ maxWidth: 420 }}>
+        <h1 className="h1">Discount codes</h1>
+        <p className="muted">
           You need to sign in first. Head to the{" "}
-          <Link href="/dashboard" style={{ color: "#8ab4ff" }}>
+          <Link href="/dashboard" style={{ fontWeight: 700 }}>
             dashboard
           </Link>{" "}
           to sign in, then come back.
@@ -87,17 +59,21 @@ export default function DiscountsPage() {
   }
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <h1 style={{ marginBottom: 0 }}>Discount codes</h1>
-        <Link href="/dashboard" style={{ color: "#8ab4ff" }}>
+    <div className="stack">
+      <div className="spread">
+        <h1 className="h1">Discount codes</h1>
+        <Link href="/dashboard" className="btn btn-sm">
           ← Dashboard
         </Link>
       </div>
-      <p style={subtle}>
+      <p className="muted" style={{ marginTop: 0 }}>
         Share a code with buyers for a percentage or fixed MBITE discount at checkout.
       </p>
-      {err && <p style={{ color: "#ff6b6b" }}>{err}</p>}
+      {err && (
+        <div className="banner banner-danger">
+          <strong>{err}</strong>
+        </div>
+      )}
 
       <CreateForm
         onCreated={() => {
@@ -173,86 +149,88 @@ function CreateForm({
   }
 
   return (
-    <div style={card}>
-      <h2 style={{ marginTop: 0 }}>New code</h2>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}>
-        <label style={{ flex: "1 1 140px" }}>
-          Code
+    <div className="card card-pad stack">
+      <h2 className="h2">New code</h2>
+      <div className="row" style={{ alignItems: "flex-end" }}>
+        <div style={{ flex: "1 1 140px" }}>
+          <label className="label">Code</label>
           <input
-            style={input}
+            className="input"
             value={code}
             placeholder="SAVE10"
             onChange={(e) => setCode(e.target.value)}
           />
-        </label>
-        <label style={{ flex: "1 1 140px" }}>
-          Type
+        </div>
+        <div style={{ flex: "1 1 140px" }}>
+          <label className="label">Type</label>
           <select
-            style={input}
+            className="select"
             value={kind}
             onChange={(e) => setKind(e.target.value as "percent" | "amount")}
           >
             <option value="percent">Percent off</option>
             <option value="amount">Fixed MBITE off</option>
           </select>
-        </label>
+        </div>
         {kind === "percent" ? (
-          <label style={{ flex: "1 1 120px" }}>
-            Percent (1–100)
+          <div style={{ flex: "1 1 120px" }}>
+            <label className="label">Percent (1–100)</label>
             <input
-              style={input}
+              className="input"
               value={percent}
               placeholder="10"
               inputMode="numeric"
               onChange={(e) => setPercent(e.target.value)}
             />
-          </label>
+          </div>
         ) : (
-          <label style={{ flex: "1 1 120px" }}>
-            Amount (MBITE)
+          <div style={{ flex: "1 1 120px" }}>
+            <label className="label">Amount (MBITE)</label>
             <input
-              style={input}
+              className="input"
               value={amount}
               placeholder="0.5"
               inputMode="decimal"
               onChange={(e) => setAmount(e.target.value)}
             />
-          </label>
+          </div>
         )}
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end", marginTop: 12 }}>
-        <label style={{ flex: "2 1 200px" }}>
-          Product id (optional — scope to one product)
+      <div className="row" style={{ alignItems: "flex-end" }}>
+        <div style={{ flex: "2 1 200px" }}>
+          <label className="label">Product id (optional — scope to one product)</label>
           <input
-            style={input}
+            className="input"
             value={productId}
             placeholder="all products"
             onChange={(e) => setProductId(e.target.value)}
           />
-        </label>
-        <label style={{ flex: "1 1 120px" }}>
-          Max redemptions (optional)
+        </div>
+        <div style={{ flex: "1 1 120px" }}>
+          <label className="label">Max redemptions (optional)</label>
           <input
-            style={input}
+            className="input"
             value={maxRedemptions}
             placeholder="∞"
             inputMode="numeric"
             onChange={(e) => setMaxRedemptions(e.target.value)}
           />
-        </label>
-        <label style={{ flex: "1 1 160px" }}>
-          Expires (optional)
+        </div>
+        <div style={{ flex: "1 1 160px" }}>
+          <label className="label">Expires (optional)</label>
           <input
-            style={input}
+            className="input"
             type="datetime-local"
             value={expiresAt}
             onChange={(e) => setExpiresAt(e.target.value)}
           />
-        </label>
+        </div>
       </div>
-      <button style={{ ...btn, marginTop: 14 }} onClick={submit} disabled={busy || !code.trim()}>
-        {busy ? "Creating…" : "Create code"}
-      </button>
+      <div>
+        <button className="btn btn-accent" onClick={submit} disabled={busy || !code.trim()}>
+          {busy ? "Creating…" : "Create code"}
+        </button>
+      </div>
     </div>
   );
 }
@@ -277,53 +255,52 @@ function DiscountList({
   }
 
   return (
-    <div style={card}>
-      <h2 style={{ marginTop: 0 }}>Your codes</h2>
+    <div className="card card-pad stack">
+      <h2 className="h2">Your codes</h2>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table className="tbl">
           <thead>
-            <tr style={{ textAlign: "left", color: "#7c8699" }}>
-              <th style={{ padding: "6px 8px 6px 0" }}>Code</th>
-              <th style={{ padding: "6px 8px" }}>Value</th>
-              <th style={{ padding: "6px 8px" }}>Scope</th>
-              <th style={{ padding: "6px 8px" }}>Redeemed</th>
-              <th style={{ padding: "6px 8px" }}>Expires</th>
-              <th style={{ padding: "6px 8px" }}>Status</th>
-              <th style={{ padding: "6px 8px" }} />
+            <tr>
+              <th>Code</th>
+              <th>Value</th>
+              <th>Scope</th>
+              <th>Redeemed</th>
+              <th>Expires</th>
+              <th>Status</th>
+              <th />
             </tr>
           </thead>
           <tbody>
             {(items ?? []).map((d) => (
-              <tr key={d.id} style={{ borderTop: "1px solid #1c2230" }}>
-                <td style={{ padding: "8px 8px 8px 0", fontWeight: 600 }}>{d.code}</td>
-                <td style={{ padding: "8px" }}>
+              <tr key={d.id}>
+                <td style={{ fontWeight: 800 }} className="mono">{d.code}</td>
+                <td>
                   {d.percentOff != null
                     ? `${d.percentOff}%`
                     : d.amountOffMbite != null
                       ? `${fmtMbite(d.amountOffMbite)} MBITE`
                       : "—"}
                 </td>
-                <td style={{ padding: "8px", ...subtle }}>
+                <td className="muted">
                   {d.product ? d.product.title : "All products"}
                 </td>
-                <td style={{ padding: "8px" }}>
+                <td>
                   {d.redeemedCount}
                   {d.maxRedemptions != null ? ` / ${d.maxRedemptions}` : ""}
                 </td>
-                <td style={{ padding: "8px", ...subtle }}>
+                <td className="muted">
                   {d.expiresAt ? new Date(d.expiresAt).toLocaleDateString() : "—"}
                 </td>
-                <td style={{ padding: "8px" }}>
-                  <span style={{ color: d.active ? "#4ade80" : "#7c8699", fontWeight: 600 }}>
-                    {d.active ? "Active" : "Inactive"}
-                  </span>
+                <td>
+                  {d.active ? (
+                    <span className="pill pill-mint">Active</span>
+                  ) : (
+                    <span className="pill">Inactive</span>
+                  )}
                 </td>
-                <td style={{ padding: "8px", textAlign: "right" }}>
+                <td style={{ textAlign: "right" }}>
                   {d.active && (
-                    <button
-                      style={{ ...btn, background: "#2a3344", color: "#e6e8ec", padding: "6px 12px" }}
-                      onClick={() => deactivate(d.id)}
-                    >
+                    <button className="btn btn-sm" onClick={() => deactivate(d.id)}>
                       Deactivate
                     </button>
                   )}
@@ -332,14 +309,14 @@ function DiscountList({
             ))}
             {items === null && (
               <tr>
-                <td colSpan={7} style={{ ...subtle, paddingTop: 12 }}>
+                <td colSpan={7} className="muted">
                   Loading codes…
                 </td>
               </tr>
             )}
             {items !== null && items.length === 0 && (
               <tr>
-                <td colSpan={7} style={{ ...subtle, paddingTop: 12 }}>
+                <td colSpan={7} className="muted">
                   No discount codes yet — create your first one above.
                 </td>
               </tr>
