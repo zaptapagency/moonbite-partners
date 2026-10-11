@@ -27,10 +27,15 @@ html, body { padding: 0; margin: 0; }
 body {
   background: var(--bg);
   color: var(--ink);
-  font-family: "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-family: var(--font-sans), "Helvetica Neue", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
   font-size: 16px;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+}
+
+/* Chunky geometric display font for headings + the logo (Gumroad-ish). */
+.h1, .h2, .h3, .font-display {
+  font-family: var(--font-display), "Helvetica Neue", ui-sans-serif, system-ui, sans-serif;
 }
 
 a { color: inherit; }

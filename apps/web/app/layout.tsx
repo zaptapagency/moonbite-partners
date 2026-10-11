@@ -1,5 +1,10 @@
 import type { ReactNode } from "react";
+import { Space_Grotesk, Inter } from "next/font/google";
 import "./globals.css";
+
+// Gumroad-ish chunky geometric display + clean body sans.
+const display = Space_Grotesk({ subsets: ["latin"], weight: ["500", "700"], variable: "--font-display" });
+const sans = Inter({ subsets: ["latin"], weight: ["400", "500", "700"], variable: "--font-sans" });
 
 export const metadata = {
   title: "MoonBite Partners",
@@ -8,7 +13,7 @@ export const metadata = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${display.variable} ${sans.variable}`}>
       <body style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <header
           style={{
@@ -20,7 +25,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
             className="container"
             style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}
           >
-            <a href="/" style={{ textDecoration: "none", fontWeight: 800, fontSize: 20, letterSpacing: "-0.02em" }}>
+            <a href="/" className="font-display" style={{ textDecoration: "none", fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>
               🌙 MoonBite
             </a>
             <nav style={{ display: "flex", gap: 10, alignItems: "center" }}>
