@@ -312,50 +312,50 @@ export default function OrderStatusView({ orderId }: { orderId: string }) {
   }
 
   // Default: awaiting payment / detected — show payment instructions.
+  const detected = status === "DETECTED";
   return (
-    <div className="stack" style={{ maxWidth: 480 }}>
-      <h1 className="h1" style={{ fontSize: "clamp(28px, 4vw, 40px)" }}>
-        Pay {inv.amountMbite} MBITE
-      </h1>
-      <p className="muted" style={{ margin: 0 }}>{STATUS_COPY[status] ?? status}</p>
-
-      <div className="panel">
-        <div className="muted" style={{ fontSize: 12 }}>Send exactly</div>
-        <div className="price" style={{ fontSize: 22 }}>{inv.amountMbite} MBITE</div>
-        <div className="muted" style={{ fontSize: 12, marginTop: 12 }}>To address</div>
-        <code className="mono" style={{ wordBreak: "break-all" }}>{inv.payToAddress}</code>
+    <div className="stack" style={{ maxWidth: 520, margin: "0 auto" }}>
+      <div style={{ textAlign: "center" }}>
+        <span className="pill pill-pink">{detected ? "⏳ Payment seen" : "⚡ Awaiting payment"}</span>
       </div>
 
-      <div>
-        <div className="muted" style={{ fontSize: 12 }}>
-          Confirmations {inv.confirmations}/{inv.requiredConfirmations}
-        </div>
-        <div
-          style={{
-            background: "#fff",
-            border: "2px solid #000",
-            borderRadius: 999,
-            height: 12,
-            marginTop: 6,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${pct}%`,
-              height: "100%",
-              background: "var(--pink)",
-              transition: "width .3s",
-            }}
-          />
+      <div className="card card-pad" style={{ boxShadow: "var(--shadow)", padding: "26px" }}>
+        <div className="stack" style={{ gap: 18 }}>
+          <div style={{ textAlign: "center" }}>
+            <div className="eyebrow">Send exactly</div>
+            <div className="pay-amount">{inv.amountMbite} MBITE</div>
+            <p className="muted" style={{ margin: "6px 0 0", fontSize: 14 }}>
+              {STATUS_COPY[status] ?? status}
+            </p>
+          </div>
+
+          <CopyField label="To this MBITE address" value={inv.payToAddress} />
+
+          <div>
+            <div className="spread" style={{ marginBottom: 6 }}>
+              <span className="label" style={{ margin: 0 }}>Confirmations</span>
+              <span className="muted" style={{ fontSize: 13, fontWeight: 700 }}>
+                {inv.confirmations}/{inv.requiredConfirmations}
+              </span>
+            </div>
+            <div className="progress"><span style={{ width: `${pct}%` }} /></div>
+          </div>
+
+          <div className="steps">
+            <div className={`step ${detected ? "done" : "active"}`}>Sent</div>
+            <div className={`step ${detected ? "active" : ""}`}>Confirming</div>
+            <div className="step">Delivered</div>
+          </div>
         </div>
       </div>
 
-      <OrderId orderId={orderId} />
-
-      <p className="muted" style={{ fontSize: 12, margin: 0 }}>
-        Quote valid until {new Date(inv.expiresAt).toLocaleTimeString()}.
+      <p className="muted" style={{ fontSize: 12, margin: 0, textAlign: "center" }}>
+        This page updates automatically. Quote valid until{" "}
+        {new Date(inv.expiresAt).toLocaleTimeString()}.
       </p>
+      <div style={{ textAlign: "center" }}>
+        <OrderId orderId={orderId} />
+      </div>
     </div>
   );
 }

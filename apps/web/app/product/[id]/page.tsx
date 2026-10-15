@@ -175,24 +175,25 @@ export default function ProductPage({
         </div>
 
         <div className="stack">
-          <h1 className="h1" style={{ fontSize: "clamp(28px, 4vw, 44px)" }}>
-            {product ? product.title : "Checkout"}
-          </h1>
-          {product && <Stars rating={product.rating} />}
           {product?.category && (
             <span className="pill pill-sky" style={{ alignSelf: "flex-start" }}>
               {product.category}
             </span>
           )}
-          {product?.description && (
-            <p className="muted" style={{ margin: 0 }}>
-              {product.description}
-            </p>
-          )}
-          {product && !product.pwyw && (
-            <div className="price" style={{ fontSize: 28 }}>
-              {formatProductPrice(product)}
+          <h1 className="h1" style={{ fontSize: "clamp(28px, 4vw, 44px)" }}>
+            {product ? product.title : "Checkout"}
+          </h1>
+          {product?.merchant && (
+            <div className="muted" style={{ fontWeight: 700, fontSize: 14 }}>
+              by {product.merchant.displayName}
             </div>
+          )}
+          {product && <Stars rating={product.rating} />}
+          {product?.description && <p className="lead">{product.description}</p>}
+          {product && !product.pwyw && (
+            <span className="pill pill-pink" style={{ alignSelf: "flex-start", fontSize: 18, padding: "8px 18px" }}>
+              {formatProductPrice(product)}
+            </span>
           )}
           {product?.pwyw && (
             <span className="pill pill-yellow" style={{ alignSelf: "flex-start" }}>

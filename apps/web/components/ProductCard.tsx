@@ -84,7 +84,7 @@ export default function ProductCard({
   const href = `/product/${product.id}`;
 
   return (
-    <div className="card pcard">
+    <div className="card pcard card-hover">
       <Link
         href={href}
         className="pcard-cover"

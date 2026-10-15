@@ -17,40 +17,66 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body style={{ minHeight: "100vh", display: "flex", flexDirection: "column" }}>
         <header
           style={{
-            borderBottom: "2px solid #000",
-            background: "#ff90e8",
+            borderBottom: "var(--border)",
+            background: "var(--pink)",
+            position: "sticky",
+            top: 0,
+            zIndex: 50,
           }}
         >
           <div
             className="container"
-            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 64 }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "space-between", height: 66, gap: 16 }}
           >
-            <a href="/" className="font-display" style={{ textDecoration: "none", fontWeight: 700, fontSize: 22, letterSpacing: "-0.02em" }}>
-              🌙 MoonBite
+            <a href="/" className="logo-mark" style={{ fontSize: 23, display: "inline-flex", alignItems: "center", gap: 8 }}>
+              <span aria-hidden>🌙</span> MoonBite
             </a>
             <nav style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <a href="/#catalog" className="btn btn-sm btn-ghost" style={{ display: "inline-flex" }}>
+                Browse
+              </a>
               <a href="/library" className="btn btn-sm">My Library</a>
               <a href="/dashboard" className="btn btn-sm btn-ink">Start selling</a>
             </nav>
           </div>
         </header>
 
-        <main className="container section" style={{ flex: 1, width: "100%" }}>
+        <main className="container" style={{ flex: 1, width: "100%", padding: "clamp(28px, 4vw, 48px) 20px" }}>
           {children}
         </main>
 
-        <footer style={{ borderTop: "2px solid #000", background: "var(--cream)" }}>
-          <div
-            className="container"
-            style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", padding: "20px" }}
-          >
+        <footer style={{ borderTop: "var(--border)", background: "var(--cream)", marginTop: "var(--space-section)" }}>
+          <div className="container" style={{ padding: "40px 20px" }}>
+            <div className="spread" style={{ alignItems: "flex-start", gap: 24 }}>
+              <div style={{ maxWidth: 360 }}>
+                <div className="logo-mark" style={{ fontSize: 22 }}>🌙 MoonBite Partners</div>
+                <p className="muted" style={{ fontSize: 14, margin: "8px 0 0" }}>
+                  Sell digital products and get paid in MBITE. Non-custodial, no
+                  chargebacks, instant on-chain settlement.
+                </p>
+              </div>
+              <nav style={{ display: "flex", gap: 40, flexWrap: "wrap" }}>
+                <div style={{ display: "grid", gap: 8, fontSize: 14 }}>
+                  <span className="eyebrow">Marketplace</span>
+                  <a href="/#catalog" className="muted">Browse products</a>
+                  <a href="/library" className="muted">My Library</a>
+                </div>
+                <div style={{ display: "grid", gap: 8, fontSize: 14 }}>
+                  <span className="eyebrow">Sell</span>
+                  <a href="/dashboard" className="muted">Start selling</a>
+                  <a href="/dashboard/profile" className="muted">Your storefront</a>
+                </div>
+                <div style={{ display: "grid", gap: 8, fontSize: 14 }}>
+                  <span className="eyebrow">Legal</span>
+                  <a href="/terms" className="muted">Terms</a>
+                  <a href="/prohibited" className="muted">Prohibited goods</a>
+                </div>
+              </nav>
+            </div>
+            <hr className="divider" style={{ margin: "28px 0 16px" }} />
             <span className="muted" style={{ fontSize: 13 }}>
               © {new Date().getFullYear()} MoonBite Partners · Non-custodial MBITE payments.
             </span>
-            <nav style={{ display: "flex", gap: 16, fontSize: 13, fontWeight: 700 }}>
-              <a href="/terms" style={{ textDecoration: "none" }}>Terms</a>
-              <a href="/prohibited" style={{ textDecoration: "none" }}>Prohibited goods</a>
-            </nav>
           </div>
         </footer>
       </body>
