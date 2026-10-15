@@ -3,47 +3,11 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
-  formatProductPrice,
   listCategories,
   listProducts,
   type ProductSummary,
-  type RatingAggregate,
 } from "../lib/api";
-
-// MBITE units (1e8) → display string.
-function fmtMbite(units: string): string {
-  try {
-    const u = BigInt(units);
-    const whole = u / 100_000_000n;
-    const frac = (u % 100_000_000n).toString().padStart(8, "0").replace(/0+$/, "");
-    return frac ? `${whole}.${frac}` : `${whole}`;
-  } catch {
-    return units;
-  }
-}
-
-/** ★ average + (count), or a muted "No reviews yet". */
-function Stars({ rating }: { rating: RatingAggregate }) {
-  if (!rating || rating.count === 0) {
-    return <span className="muted" style={{ fontSize: 13 }}>No reviews yet</span>;
-  }
-  const avg = rating.average ?? 0;
-  const full = Math.round(avg);
-  return (
-    <span className="stars">
-      <span aria-hidden>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <span key={i} className={i < full ? "on" : "off"}>
-            ★
-          </span>
-        ))}
-      </span>{" "}
-      <span className="muted" style={{ fontWeight: 700 }}>
-        {avg.toFixed(1)} ({rating.count})
-      </span>
-    </span>
-  );
-}
+import ProductCard from "../components/ProductCard";
 
 export default function CatalogPage() {
   const [q, setQ] = useState("");
@@ -154,40 +118,13 @@ export default function CatalogPage() {
           style={{ opacity: loading ? 0.6 : 1, transition: "opacity .15s" }}
         >
           {products.map((p) => (
-            <Link
+            <ProductCard
               key={p.id}
-              href={`/product/${p.id}`}
-              className="card pcard"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                className="pcard-cover"
-                style={
-                  p.imageUrl ? { backgroundImage: `url(${p.imageUrl})` } : undefined
-                }
-              >
-                {!p.imageUrl && <span aria-hidden>🌙</span>}
-              </div>
-              <div className="pcard-body">
-                <div className="muted" style={{ fontSize: 12, fontWeight: 700 }}>
-                  {p.merchant.displayName}
-                </div>
-                <h3 className="h3">{p.title}</h3>
-                {p.category && (
-                  <span className="pill pill-sky" style={{ alignSelf: "flex-start" }}>
-                    {p.category}
-                  </span>
-                )}
-                <p className="muted" style={{ margin: 0, fontSize: 14, flex: 1 }}>
-                  {p.description}
-                </p>
-                <Stars rating={p.rating} />
-                <div className="spread" style={{ marginTop: 4 }}>
-                  <span className="price">{formatProductPrice(p)}</span>
-                  <span className="btn btn-sm btn-accent">Buy →</span>
-                </div>
-              </div>
-            </Link>
+              product={p}
+              showMerchant
+              showRating
+              showDescription
+            />
           ))}
         </div>
       </section>

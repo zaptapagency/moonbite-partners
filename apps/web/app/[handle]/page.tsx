@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { formatProductPrice } from "../../lib/api";
 import { getStorefront, type Storefront } from "../../lib/storefront";
+import ProductCard from "../../components/ProductCard";
 
 export default function StorefrontPage() {
   const params = useParams<{ handle: string }>();
@@ -102,32 +102,7 @@ export default function StorefrontPage() {
       ) : (
         <div className="grid-cards">
           {products.map((p) => (
-            <Link
-              key={p.id}
-              href={`/product/${p.id}`}
-              className="card pcard"
-              style={{ textDecoration: "none", color: "inherit" }}
-            >
-              <div
-                className="pcard-cover"
-                style={
-                  p.imageUrl ? { backgroundImage: `url(${p.imageUrl})` } : undefined
-                }
-              >
-                {!p.imageUrl && <span aria-hidden>🌙</span>}
-              </div>
-              <div className="pcard-body">
-                <h3 className="h3">{p.title}</h3>
-                {p.category && (
-                  <span className="pill pill-sky" style={{ alignSelf: "flex-start" }}>
-                    {p.category}
-                  </span>
-                )}
-                <div className="price" style={{ marginTop: "auto" }}>
-                  {formatProductPrice(p)}
-                </div>
-              </div>
-            </Link>
+            <ProductCard key={p.id} product={p} />
           ))}
         </div>
       )}

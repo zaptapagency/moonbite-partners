@@ -15,6 +15,8 @@ export interface StorefrontProduct {
   priceMbite: string; // BigInt serialized as a string by the API
   priceCurrency?: string;
   displayUsd?: string | null;
+  pwyw?: boolean;
+  minPriceMbite?: string | null;
   rating: RatingAggregate;
 }
 

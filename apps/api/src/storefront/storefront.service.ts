@@ -45,6 +45,8 @@ export class StorefrontService {
         priceMbite: true,
         priceCurrency: true,
         displayUsd: true,
+        pwyw: true,
+        minPriceMbite: true,
       },
     });
 

@@ -68,6 +68,7 @@ export default function ProductPage({
   const [email, setEmail] = useState("");
   const [pwywAmount, setPwywAmount] = useState("");
   const [discountCode, setDiscountCode] = useState("");
+  const [showExtras, setShowExtras] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -201,24 +202,8 @@ export default function ProductPage({
         </div>
       </section>
 
-      {/* --- Checkout --- */}
+      {/* --- One-click checkout (Gumroad style) --- */}
       <section className="panel stack" style={{ maxWidth: 480 }}>
-        <h2 className="h2" style={{ fontSize: 24 }}>Checkout</h2>
-        <p className="muted" style={{ margin: 0 }}>
-          We&apos;ll generate a one-time MBITE address and wait for your payment to
-          confirm, then deliver the product automatically.
-        </p>
-
-        <div>
-          <label className="label">Delivery email (optional)</label>
-          <input
-            className="input"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-          />
-        </div>
-
         {product?.pwyw && (
           <div>
             <label className="label">Name your price (MBITE)</label>
@@ -235,28 +220,61 @@ export default function ProductPage({
           </div>
         )}
 
-        <div>
-          <label className="label">Discount code (optional)</label>
-          <input
-            className="input"
-            value={discountCode}
-            onChange={(e) => setDiscountCode(e.target.value)}
-            placeholder="SAVE10"
-          />
-        </div>
-
         {err && (
           <div className="banner banner-danger" style={{ padding: 14 }}>
             <strong>{err}</strong>
           </div>
         )}
+
         <button
           className="btn btn-accent btn-block"
           onClick={buy}
           disabled={busy}
+          style={{ fontSize: 18, padding: "16px 20px" }}
         >
-          {busy ? "Creating invoice…" : "Pay with MBITE"}
+          {busy
+            ? "Creating invoice…"
+            : product && !product.pwyw
+              ? `I want this! — ${formatProductPrice(product)}`
+              : "I want this!"}
         </button>
+
+        <p className="muted" style={{ fontSize: 13, margin: 0, textAlign: "center" }}>
+          One click. We generate a one-time MBITE address, confirm your payment,
+          then deliver instantly.
+        </p>
+
+        {!showExtras ? (
+          <button
+            type="button"
+            className="btn btn-sm"
+            onClick={() => setShowExtras(true)}
+            style={{ alignSelf: "center" }}
+          >
+            Add email or discount code
+          </button>
+        ) : (
+          <div className="stack">
+            <div>
+              <label className="label">Delivery email (optional)</label>
+              <input
+                className="input"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+            </div>
+            <div>
+              <label className="label">Discount code (optional)</label>
+              <input
+                className="input"
+                value={discountCode}
+                onChange={(e) => setDiscountCode(e.target.value)}
+                placeholder="SAVE10"
+              />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* --- Reviews --- */}
