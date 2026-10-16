@@ -29,9 +29,10 @@ export class StorefrontService {
         handle: true,
         bio: true,
         avatarUrl: true,
+        suspended: true,
       },
     });
-    if (!merchant) throw new NotFoundException("Storefront not found");
+    if (!merchant || merchant.suspended) throw new NotFoundException("Storefront not found");
 
     const products = await this.prisma.product.findMany({
       where: { merchantId: merchant.id, active: true },

@@ -223,6 +223,32 @@ async function main() {
 
     console.log(`Seeded ${c.displayName} (@${c.handle}) with ${c.products.length} products.`);
   }
+
+  // ── Platform operators (admin / super-admin) ──
+  const adminHash = await bcrypt.hash(DEMO_PASSWORD, 10);
+  await prisma.admin.upsert({
+    where: { email: "super@moonbite.example" },
+    update: { role: "SUPER_ADMIN", active: true },
+    create: {
+      email: "super@moonbite.example",
+      displayName: "Platform Owner",
+      passwordHash: adminHash,
+      role: "SUPER_ADMIN",
+    },
+  });
+  await prisma.admin.upsert({
+    where: { email: "admin@moonbite.example" },
+    update: { role: "ADMIN", active: true },
+    create: {
+      email: "admin@moonbite.example",
+      displayName: "Support Admin",
+      passwordHash: adminHash,
+      role: "ADMIN",
+    },
+  });
+  console.log(
+    `Seeded admins: super@moonbite.example (SUPER_ADMIN), admin@moonbite.example (ADMIN) — password: ${DEMO_PASSWORD}`,
+  );
 }
 
 main()

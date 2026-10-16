@@ -60,6 +60,11 @@ model Merchant {
   /// Next unused derivation index (monotonic; address = xpub/0/index).
   nextKeyIndex  Int          @default(0)
   feeBps        Int          @default(300) // overrides platform default per deal
+  /// Platform moderation: an admin can suspend a merchant (hides storefront,
+  /// blocks new orders) without deleting their data.
+  suspended     Boolean      @default(false)
+  suspendedAt   DateTime?
+  suspendReason String?
   createdAt     DateTime     @default(now())
   products      Product[]
   orders        Order[]
@@ -90,6 +95,8 @@ model Product {
   /// Method-specific config: webhook URL, storage object key, course id, etc.
   deliveryConfig Json?
   active         Boolean        @default(true)
+  /// Set when an admin takes a product down (moderation); active is also false.
+  takedownReason String?
   createdAt      DateTime       @default(now())
   orders         Order[]
   licenseKeys    LicenseKey[]
@@ -182,6 +189,8 @@ model Buyer {
   email        String   @unique
   /// null for guest buyers (checkout by email); set when they register.
   passwordHash String?
+  /// Platform moderation: block sign-in / checkout for abusive accounts.
+  suspended    Boolean  @default(false)
   createdAt    DateTime @default(now())
   orders       Order[]
 }
@@ -255,4 +264,49 @@ model Refund {
   updatedAt     DateTime     @updatedAt
 
   @@index([status])
+}
+
+/// Platform operator roles. ADMIN can moderate; SUPER_ADMIN additionally
+/// manages other admins and platform-wide settings.
+enum AdminRole {
+  ADMIN
+  SUPER_ADMIN
+}
+
+/// A platform operator (staff), separate from merchants and buyers.
+model Admin {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  displayName  String
+  passwordHash String
+  role         AdminRole  @default(ADMIN)
+  active       Boolean    @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime   @default(now())
+  auditLogs    AuditLog[]
+}
+
+/// Append-only trail of every privileged admin action, for accountability.
+model AuditLog {
+  id         String   @id @default(cuid())
+  admin      Admin?   @relation(fields: [adminId], references: [id])
+  adminId    String?
+  /// Dotted action slug, e.g. "merchant.suspend", "product.takedown".
+  action     String
+  targetType String?
+  targetId   String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([adminId])
+  @@index([targetType, targetId])
+  @@index([createdAt])
+}
+
+/// Mutable platform-wide configuration (super-admin), as JSON key/value.
+/// e.g. "defaultFeeBps", "maintenanceMode", "signupsPaused".
+model PlatformSetting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
 }

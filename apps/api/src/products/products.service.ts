@@ -36,7 +36,8 @@ export class ProductsService {
    * carries an aggregate buyer rating (count + average).
    */
   async list(query: ProductListQuery = {}) {
-    const where: Prisma.ProductWhereInput = { active: true };
+    // Public catalog hides taken-down products and suspended merchants.
+    const where: Prisma.ProductWhereInput = { active: true, merchant: { suspended: false } };
     const q = query.q?.trim();
     const category = query.category?.trim();
     if (category) where.category = category;
@@ -57,7 +58,7 @@ export class ProductsService {
   /** Distinct, non-null categories of active products (sorted). */
   async categories(): Promise<string[]> {
     const rows = await this.prisma.product.findMany({
-      where: { active: true, category: { not: null } },
+      where: { active: true, category: { not: null }, merchant: { suspended: false } },
       select: { category: true },
       distinct: ["category"],
       orderBy: { category: "asc" },

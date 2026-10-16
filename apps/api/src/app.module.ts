@@ -11,6 +11,8 @@ import { ObservabilityModule } from "./observability/observability.module";
 import { ReconcileProcessorModule } from "./queue/reconcile-processor.module";
 import { AuthModule } from "./auth/auth.module";
 import { BuyerAuthModule } from "./buyer-auth/buyer-auth.module";
+import { AdminAuthModule } from "./admin-auth/admin-auth.module";
+import { AdminModule } from "./admin/admin.module";
 import { MbiteModule } from "./mbite/mbite.module";
 import { ProductsModule } from "./products/products.module";
 import { ReviewsModule } from "./reviews/reviews.module";
@@ -69,6 +71,8 @@ import { ReadinessController } from "./health/readiness.controller";
     ObservabilityModule,
     AuthModule,
     BuyerAuthModule,
+    AdminAuthModule,
+    AdminModule,
     MbiteModule,
     MerchantsModule,
     StorefrontModule,

@@ -53,6 +53,9 @@ export class PaymentsService {
       include: { merchant: true },
     });
     if (!product || !product.active) throw new NotFoundException("Product not available");
+    if (product.merchant.suspended) {
+      throw new NotFoundException("Product not available");
+    }
     if (!product.merchant.settlementXpub) {
       throw new BadRequestException("Merchant has not configured a settlement xpub");
     }
