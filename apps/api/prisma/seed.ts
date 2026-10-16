@@ -111,10 +111,10 @@ const CREATORS: {
       {
         slug: "course",
         title: "Mastering Crypto Payments — Video Course",
-        description: "6 hours on accepting crypto the right way: non-custodial, confirmations, delivery, refunds.",
+        description: "6 hours on accepting crypto the right way: non-custodial, confirmations, delivery, refunds. MP4, delivered the instant payment confirms.",
         category: "courses",
         mbite: 15,
-        method: "COURSE_ACCESS",
+        method: "SIGNED_DOWNLOAD",
         reviews: [{ rating: 5, comment: "Finally understand UTXOs and confirmations. Excellent.", by: "devops_dan" }],
       },
       {
@@ -147,8 +147,20 @@ const CREATORS: {
   },
 ];
 
+/** Real deliverable object keys (served from STORAGE_BASE_URL). See /content. */
+const OBJECT_KEYS: Record<string, string> = {
+  sprites: "assets/sprites-pack.zip",
+  uikit: "design/lofi-ui-kit.zip",
+  soundtrack: "music/starbound-ost.zip",
+  handbook: "ebooks/indie-hackers-handbook.pdf",
+  album: "music/ambient-focus.zip",
+  notion: "templates/creator-os.zip",
+  course: "video/crypto-payments-course.mp4",
+};
+
 function deliveryConfig(p: SeedProduct): Prisma.InputJsonObject | undefined {
-  if (p.method === "SIGNED_DOWNLOAD") return { objectKey: `demo/${p.slug}.zip` };
+  if (p.method === "SIGNED_DOWNLOAD")
+    return { objectKey: OBJECT_KEYS[p.slug] ?? `demo/${p.slug}.zip` };
   if (p.method === "WEBHOOK")
     return { webhookUrl: "https://httpbin.org/post", webhookSecret: "seed-webhook-secret-0123456789" };
   return undefined;

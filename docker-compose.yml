@@ -75,6 +75,18 @@ services:
     depends_on:
       - api
 
+  # Static object store for SIGNED_DOWNLOAD deliverables (the real product
+  # files). The API mints a short-lived signed /download URL that 302-redirects
+  # here. Point STORAGE_BASE_URL at this host.
+  content:
+    profiles: ["app"]
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./content:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
+
   # ── MBITE full node (PLACEHOLDER) ────────────────────────────
   # The payment service talks to this over JSON-RPC + ZMQ.
   # TODO(Phase 0): swap in the real MoonBite node image/build and
