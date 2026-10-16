@@ -60,7 +60,7 @@ export default function AdminMerchants() {
                 </td>
                 <td>{m._count.products}</td>
                 <td>{m._count.orders}</td>
-                <td>{m.suspended ? <span className="pill" style={{ background: "var(--yellow)" }}>Suspended</span> : <span className="pill pill-soft">Active</span>}</td>
+                <td>{m.suspended ? <span className="badge badge-amber">Suspended</span> : <span className="badge badge-green">Active</span>}</td>
                 <td>
                   {m.suspended
                     ? <button className="btn btn-sm" disabled={busy === m.id} onClick={() => act(m.id, () => unsuspendMerchant(m.id))}>Reinstate</button>

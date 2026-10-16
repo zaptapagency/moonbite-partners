@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { listOrders, fmtMbite, type AdminOrder } from "../../../lib/admin";
+import { listOrders, fmtMbite, statusBadge, type AdminOrder } from "../../../lib/admin";
 
 const STATUSES = ["AWAITING_PAYMENT", "DETECTED", "UNDERPAID", "OVERPAID", "PAID", "FULFILLED", "EXPIRED", "REFUNDED", "CANCELLED"];
 
@@ -35,12 +35,12 @@ export default function AdminOrders() {
           <tbody>
             {rows.map((o) => (
               <tr key={o.id}>
-                <td className="mono" style={{ fontSize: 11 }}>{o.id.slice(0, 10)}…{o.refund ? <span className="pill pill-soft" style={{ marginLeft: 6, fontSize: 10 }}>refund {o.refund.status}</span> : null}</td>
+                <td className="mono" style={{ fontSize: 11 }}>{o.id.slice(0, 10)}…{o.refund ? <span className="badge badge-blue" style={{ marginLeft: 6 }}>refund {o.refund.status.toLowerCase()}</span> : null}</td>
                 <td>{o.product.title}</td>
                 <td className="muted">{o.merchant.displayName}</td>
                 <td>{fmtMbite(o.amountMbite)}{o.receivedMbite !== "0" && o.receivedMbite !== o.amountMbite ? ` (got ${fmtMbite(o.receivedMbite)})` : ""}</td>
                 <td>{o.confirmations}/{o.requiredConfirmations}</td>
-                <td><span className="pill pill-soft">{o.status}</span></td>
+                <td><span className={`badge ${statusBadge(o.status)}`}>{o.status.replace(/_/g, " ").toLowerCase()}</span></td>
                 <td className="muted" style={{ fontSize: 12 }}>{new Date(o.createdAt).toLocaleString()}</td>
               </tr>
             ))}

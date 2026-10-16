@@ -36,7 +36,7 @@ export default function AdminBuyers() {
                 <td style={{ fontWeight: 700 }}>{b.email}</td>
                 <td>{b._count.orders}</td>
                 <td className="muted" style={{ fontSize: 12 }}>{new Date(b.createdAt).toLocaleDateString()}</td>
-                <td>{b.suspended ? <span className="pill" style={{ background: "var(--yellow)" }}>Suspended</span> : <span className="pill pill-soft">Active</span>}</td>
+                <td>{b.suspended ? <span className="badge badge-amber">Suspended</span> : <span className="badge badge-green">Active</span>}</td>
                 <td>
                   {b.suspended
                     ? <button className="btn btn-sm" disabled={busy === b.id} onClick={() => act(b.id, () => unsuspendBuyer(b.id))}>Reinstate</button>

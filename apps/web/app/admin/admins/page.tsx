@@ -53,7 +53,7 @@ export default function AdminStaffPage() {
                     <option value="ADMIN">ADMIN</option><option value="SUPER_ADMIN">SUPER_ADMIN</option>
                   </select>
                 </td>
-                <td>{a.active ? <span className="pill pill-soft">Active</span> : <span className="pill" style={{ background: "var(--yellow)" }}>Disabled</span>}</td>
+                <td>{a.active ? <span className="badge badge-green">Active</span> : <span className="badge badge-gray">Disabled</span>}</td>
                 <td className="muted" style={{ fontSize: 12 }}>{a.lastLoginAt ? new Date(a.lastLoginAt).toLocaleString() : "never"}</td>
                 <td className="row" style={{ gap: 6 }}>
                   <button className="btn btn-sm" disabled={busy === a.id} onClick={() => run(a.id, () => updateAdmin(a.id, { active: !a.active }))}>{a.active ? "Disable" : "Enable"}</button>

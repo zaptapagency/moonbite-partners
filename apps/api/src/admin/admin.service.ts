@@ -92,7 +92,35 @@ export class AdminService {
       },
     });
 
+    // 14-day daily timeseries (orders + settled GMV) for the dashboard chart.
+    const DAYS = 14;
+    const t0 = new Date();
+    t0.setHours(0, 0, 0, 0);
+    const start = new Date(t0.getTime() - (DAYS - 1) * 86_400_000);
+    const window = await this.prisma.order.findMany({
+      where: { createdAt: { gte: start } },
+      select: { createdAt: true, amountMbite: true, status: true },
+    });
+    const timeseries = Array.from({ length: DAYS }, (_, i) => {
+      const d = new Date(start.getTime() + i * 86_400_000);
+      return { date: d.toISOString().slice(0, 10), orders: 0, gmv: 0n };
+    });
+    const dayIndex = new Map(timeseries.map((d, i) => [d.date, i]));
+    for (const o of window) {
+      const i = dayIndex.get(o.createdAt.toISOString().slice(0, 10));
+      if (i == null) continue;
+      timeseries[i].orders += 1;
+      if (SETTLED.includes(o.status)) timeseries[i].gmv += o.amountMbite;
+    }
+    // 7d-over-7d order trend within the 14-day window.
+    const mid = new Date(t0.getTime() - 6 * 86_400_000);
+    const last7 = window.filter((o) => o.createdAt >= mid).length;
+    const prev7 = window.length - last7;
+    const ordersTrend = prev7 === 0 ? null : Math.round(((last7 - prev7) / prev7) * 100);
+
     return {
+      timeseries: timeseries.map((d) => ({ date: d.date, orders: d.orders, gmv: d.gmv.toString() })),
+      trends: { orders7d: ordersTrend, ordersLast7: last7, ordersPrev7: prev7 },
       counts: {
         merchants,
         suspendedMerchants,

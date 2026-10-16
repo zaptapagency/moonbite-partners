@@ -52,7 +52,7 @@ export default function AdminProducts() {
                 <td className="muted">{p.merchant.displayName}{p.merchant.suspended ? " (suspended)" : ""}</td>
                 <td>{fmtMbite(p.priceMbite)} MBITE</td>
                 <td>{p._count.orders}</td>
-                <td>{p.active ? <span className="pill pill-soft">Live</span> : <span className="pill" style={{ background: "var(--yellow)" }}>Down</span>}</td>
+                <td>{p.active ? <span className="badge badge-green">Live</span> : <span className="badge badge-amber">Down</span>}</td>
                 <td>
                   {p.active
                     ? <button className="btn btn-sm btn-ink" disabled={busy === p.id} onClick={() => { const r = window.prompt("Takedown reason", "Policy violation") ?? undefined; act(p.id, () => takedownProduct(p.id, r)); }}>Take down</button>

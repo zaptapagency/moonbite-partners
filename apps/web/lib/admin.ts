@@ -56,6 +56,8 @@ export interface AdminMe {
   createdAt: string;
 }
 export interface Metrics {
+  timeseries: { date: string; orders: number; gmv: string }[];
+  trends: { orders7d: number | null; ordersLast7: number; ordersPrev7: number };
   counts: {
     merchants: number;
     suspendedMerchants: number;
@@ -208,6 +210,17 @@ export const setSetting = (key: string, value: unknown) =>
 export const listAudit = (action = "") => req<AuditEntry[]>(`/admin/super/audit${action ? `?action=${encodeURIComponent(action)}` : ""}`);
 
 // ── Formatting ─────────────────────────────────────────────────────────────
+/** Maps an order status to an admin badge class. */
+export function statusBadge(s: string): string {
+  const map: Record<string, string> = {
+    FULFILLED: "badge-green", PAID: "badge-green", OVERPAID: "badge-blue",
+    AWAITING_PAYMENT: "badge-amber", DETECTED: "badge-amber",
+    UNDERPAID: "badge-red", EXPIRED: "badge-gray", CANCELLED: "badge-gray",
+    REFUNDED: "badge-blue",
+  };
+  return map[s] ?? "badge-gray";
+}
+
 export function fmtMbite(units: string | number): string {
   try {
     const u = BigInt(units);
