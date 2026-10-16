@@ -10,8 +10,10 @@ const DEMO_PASSWORD = "password123";
  * Well-known BIP32 TEST-vector xpub — derives valid addresses but is NOT a real
  * wallet. Replace with real merchant xpubs before taking live payments.
  */
+// BIP32 test-vector 1 master xpub (seed 000102…0f). Valid base58check — a
+// truncated copy here silently breaks address derivation at checkout.
 const DEMO_XPUB =
-  "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet";
+  "xpub661MyMwAqRbcFtXgS5sYJABqqG9YLmC4Q1Rdap9gSE8NqtwybGhePY2gZ29ESFjqJoCu1Rupje8YtGqsefD265TMg7usUDFdp6W1EGMcet8";
 
 const img = (slug: string) => `https://picsum.photos/seed/mb-${slug}/800/500`;
 const avatar = (slug: string) => `https://picsum.photos/seed/mb-${slug}-av/240`;
